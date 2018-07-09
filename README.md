@@ -1,1 +1,1 @@
-# AdaptiveBayesianUpdates
+# Adaptive Bayesian Updates
