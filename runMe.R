@@ -29,7 +29,7 @@ array_id_offset = 0;
 #Should the sim_id labels be randomly permuted across array_ids? Helpful if you want to look at intermediate results 
 #and have good representation of all scenarios. Obviously, once all simulations are finished running, the final results will 
 #remain the same
-permute_sim_ids = F;
+permute_sim_ids = T;
 #Number of independent replicates to do for each scenario, e.g. 8 replicates times 10 simulated datasets per replicate = 80 
 #simulated datasets per scenario
 runs_per_scenario = 8;
