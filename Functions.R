@@ -143,9 +143,9 @@ draw_data = function(n_hist = 150,
 #
 #intercept_offset (vector) vector of 0's and 1's equal having the same length as y. Those observations with a value of 1 
 #have an additional constant offset in their linear predictor, effectively a different intercept. This is useful to jointly 
-#regress two datasets in which it is believed that the regression coefficients are the same but not the intercepts. It is 
-#useful (but not used) in the simulation study to compare to a benchmark, namely if both the historical and current datasets 
-#were available. 
+#regress two datasets in which it is believed that the regression coefficients are the same but not the intercepts and could be 
+#useful (but was not used) in the simulation study to compare to a benchmark, namely if both the historical and current datasets 
+#were available but there is a desire to adjust for potentially different baseline prevalences. 
 #
 #only_prior (logical) should all data be ignored, sampling only from the prior?
 #
@@ -212,18 +212,20 @@ glm_standard = function(stan_fit = NA,
     }
     divergent_check = unlist(lapply(curr_fit$warning,grep,pattern="divergent transitions",value=T));
     rhat_check = max(summary(curr_fit$value)$summary[,"Rhat"],na.rm=T);
+    #Originally, the break conditions were baesd upon having both no divergent transitions as well as a max Rhat (i.e. gelman-rubin 
+    #diagnostic) sufficiently close to 1. I subsequently changed the conditions to be based only upon the first, which is reflected
+    #by setting rhat = T immediately below. 
     break_conditions = c(divergence = F, rhat = T);
-    if(length(divergent_check) == 0) {
+    if(length(divergent_check) == 0) {#corresponds to zero divergent transitions
       curr_divergences = 0;
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       break_conditions["divergence"] = T;
-    } else {
+    } else {#corresponds to > zero divergent transitions
       curr_divergences <- max(as.numeric(strsplit(divergent_check," ")$message),na.rm=T);
-      #cat(paste0(curr_divergences ," divergent transition(s) at sim ",i ," (data seed = ",data_seeds[i],") at ",curr_method, "\n"))
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       curr_try = curr_try + 1;
     }
-    
+    #update if fewer divergent transitions were found
     if(curr_divergences < accepted_divergences) {
       accepted_divergences = curr_divergences;
       max_rhat = rhat_check;
@@ -353,18 +355,20 @@ glm_nab = function(stan_fit = NA,
     }
     divergent_check = unlist(lapply(curr_fit$warning,grep,pattern="divergent transitions",value=T));
     rhat_check = max(summary(curr_fit$value)$summary[,"Rhat"],na.rm=T);
+    #Originally, the break conditions were baesd upon having both no divergent transitions as well as a max Rhat (i.e. gelman-rubin 
+    #diagnostic) sufficiently close to 1. I subsequently changed the conditions to be based only upon the first, which is reflected
+    #by setting rhat = T immediately below. 
     break_conditions = c(divergence = F, rhat = T);
-    if(length(divergent_check) == 0) {
+    if(length(divergent_check) == 0) {#corresponds to zero divergent transitions
       curr_divergences = 0;
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       break_conditions["divergence"] = T;
-    } else {
+    } else {#corresponds to > zero divergent transitions
       curr_divergences <- max(as.numeric(strsplit(divergent_check," ")$message),na.rm=T);
-      #cat(paste0(curr_divergences ," divergent transition(s) at sim ",i ," (data seed = ",data_seeds[i],") at ",curr_method, "\n"))
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       curr_try = curr_try + 1;
     }
-    
+    #update if fewer divergent transitions were found
     if(curr_divergences < accepted_divergences) {
       accepted_divergences = curr_divergences;
       max_rhat = rhat_check;
@@ -395,7 +399,7 @@ glm_nab = function(stan_fit = NA,
   }
 }
 
-#DESCRIPTION: Program for fitting a GLM equipped with the 'naive adaptive bayes' prior evaluated in the manuscript
+#DESCRIPTION: Program for fitting a GLM equipped with the 'sensible adaptive bayes' prior evaluated in the manuscript
 #
 #
 #ARGUMENTS: (only those distinct from glm_standard and glm_nab are discussed)
@@ -495,18 +499,20 @@ glm_sab = function(stan_fit = NA,
     }
     divergent_check = unlist(lapply(curr_fit$warning,grep,pattern="divergent transitions",value=T));
     rhat_check = max(summary(curr_fit$value)$summary[,"Rhat"],na.rm=T);
+    #Originally, the break conditions were baesd upon having both no divergent transitions as well as a max Rhat (i.e. gelman-rubin 
+    #diagnostic) sufficiently close to 1. I subsequently changed the conditions to be based only upon the first, which is reflected
+    #by setting rhat = T immediately below.
     break_conditions = c(divergence = F, rhat = T);
-    if(length(divergent_check) == 0) {
+    if(length(divergent_check) == 0) {#corresponds to zero divergent transitions
       curr_divergences = 0;
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       break_conditions["divergence"] = T;
-    } else {
+    } else {#corresponds to > zero divergent transitions
       curr_divergences <- max(as.numeric(strsplit(divergent_check," ")$message),na.rm=T);
-      #cat(paste0(curr_divergences ," divergent transition(s) at sim ",i ," (data seed = ",data_seeds[i],") at ",curr_method, "\n"))
       max_divergences = max(max_divergences,curr_divergences,na.rm=T);
       curr_try = curr_try + 1;
     }
-    
+    #update if fewer divergent transitions were found
     if(curr_divergences < accepted_divergences) {
       accepted_divergences = curr_divergences;
       max_rhat = rhat_check;
