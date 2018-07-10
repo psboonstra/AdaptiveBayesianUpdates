@@ -46,9 +46,9 @@ if(which_run == 1) {#first batch
   #of 100 simulated datasets per scenario presented in the results. 
   jobs_per_scenario = 8;
   n_sim = 7;
-  #Add 'array_id_offset' to the label of the saved object. Useful when a new batch of jobs is run and you want to continue the labeling scheme. 
+  #'array_id_offset' is added to the label of the saved object. Useful when a new batch of jobs is run and you want to continue the labeling scheme. 
   #In Boonstra and Barbaro, 960 jobs were initially submitted (120 scenarios times 8 jobs per scenario), followed by 480 subsequent jobs (120 scenarios
-  #times 4 jobs per scenario) . Thus, for the second batch, array_id_offset was set to be 960, so that the first job from the second batch would be labeled 961. 
+  #times 4 jobs per scenario). Thus, for the second batch, array_id_offset was set to be 960, so that the first job from the second batch would be labeled 961. 
   array_id_offset = 0;
 } else {#second batch
   jobs_per_scenario = 4;
