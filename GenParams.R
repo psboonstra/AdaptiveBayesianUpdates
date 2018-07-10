@@ -1,3 +1,7 @@
+#DESCRIPTION: creates a list of lists called 'arglist'. The user should not generally change anything in this script. If it is desired to overwrite
+#any of the default values, create that variable in 'runMe.R' (before sourcing GenParams.R on line 65 of that script). The default value below will 
+#then be ignored. 
+
 if(!"array_id_offset"%in%ls()){array_id_offset = 0;}
 if(!"mc_iter_after_warmup"%in%ls()){mc_iter_after_warmup = 1.5e3;}
 if(!"mc_chains"%in%ls()){mc_chains = 2;}
@@ -17,12 +21,12 @@ if(!"phi_params"%in%ls()){
 }
 
 
-if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "NullPrior_Stable.stan";}
+if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "RegHS_Stable.stan";}
 if(!"sab_stan_filename"%in%ls()){sab_stan_filename = "SAB_Stable.stan";}
-if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = NULL;}
+if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = "SAB_Dev.stan";}
 if(!"nab_stan_filename"%in%ls()){nab_stan_filename = "NAB_Stable.stan";}
-if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = NULL;}
-if(!"skip_methods"%in%ls()){skip_methods = c("Benchmark","NAB_dev","SAB_dev");}
+if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = "NAB_Dev.stan";}
+if(!"skip_methods"%in%ls()){skip_methods = c("Benchmark");}
 
 if(!"n_list"%in%ls()){
   n_list = list(n_hist = c(100,100,400,400,1600,1600),#n_hist
@@ -99,12 +103,11 @@ if(!"covariate_args_list"%in%ls()) {
 }
 
 if(!"n_sim"%in%ls()) {
-  n_sim = 10;
+  n_sim = 7;
 }
 
 all_varying = expand.grid(covariates = 1:length(covariate_args_list),n = 1:length(n_list[[1]]), betas = 1:length(betas_list[[1]]));
 all_varying = cbind(all_varying, scenario = array_id_offset + (1:nrow(all_varying)));
-#all_varying = rbind(all_varying, all_varying[all_varying$betas >= 9,])
 
 random_seeds = sample(2^30.999,nrow(all_varying));
 

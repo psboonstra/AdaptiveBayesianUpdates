@@ -1,9 +1,9 @@
 
-#Self-explanatory
+#DESCRIPTION: self-explanatory
 expit = function(x) { 1/(1+exp(-x));}
 logit = function(x) { log(x/(1-x));}
 
-#Error-handling function
+#DESCRIPTION: Error-handling function
 #Borrowed from the R package simsalapar 
 #https://www.rdocumentation.org/packages/simsalapar/versions/1.0-9/topics/tryCatch.W.E
 tryCatch.W.E <- function(expr)
@@ -18,12 +18,12 @@ tryCatch.W.E <- function(expr)
        warning = W)
 }
 
-#Simulator function for drawing binary outcomes (historical, current, and new [for validation]), 
+#DESCRIPTION: Simulator function for drawing binary outcomes (historical, current, and new [for validation]), 
 #the probabilities of which are logistic-linear functions of normal and/or bernoulli  distributed 
 #predictors. 
 #
 #
-#Arguments:
+#ARGUMENTS:
 #
 #n_hist (pos. integer) size of historical data; n_hist in the paper
 #
@@ -31,15 +31,15 @@ tryCatch.W.E <- function(expr)
 #
 #n_new (pos. integer) size of testing data (for prediction)
 #
-#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra, et al. 
+#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro 
 #
-#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra, et al. #true_betas_orig (vector) 
-#true regression coefficients corresponding to original covariates
+#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra and Barbaro 
 #
-#true_betas_aug (vector) true regression coefficients corresponding to augmented covariates. Beta^o in Boonstra, et al.
+#true_betas_orig (vector) true regression coefficients corresponding to original covariates. Beta^o in Boonstra and Barbaro
 #
-#covariate_args (list) the named arguments are simple ways to govern the distribution of the predictors. Beta^a in Boonstra, et al.
+#true_betas_aug (vector) true regression coefficients corresponding to augmented covariates. Beta^a in Boonstra and Barbaro
 #
+#covariate_args (list) the named arguments are simple ways to govern the distribution of the predictors. 
 #x_correlation is the normal correlation between any pair of predictors; x_orig_binom is the 
 #integer indices (any subset of 1, ..., length(true_betas_orig)) indicating which of the original 
 #covariates should be transformed to binary values based upon being less than or greater than zero; 
@@ -110,14 +110,16 @@ draw_data = function(n_hist = 150,
   
 }
 
-#Program for fitting a GLM equipped with the 'standard' prior evaluated in the manuscript, which is the 
-#regularized horseshoe. It has two intended uses: compile stan scripts or analyze data. 
-#First, if the user provides nothing but a valid 'stan_path', then the stan script is compiled. 
-#Second, the user provides both a compiled stanfit object as well asvalues for y, x_standardized, 
-#p, q, and any other desired arguments to actually fit a regression. 
+#DESCRIPTION: Program for fitting a GLM equipped with the 'standard' prior evaluated 
+#in Boonstra and Barbaro, which is the regularized horseshoe. It has two intended uses: 
+#compile stan scripts or analyze data. First, if the user provides nothing but a valid 
+#'stan_path', then the stan script is compiled. Second, the user provides both a compiled 
+#stanfit object as well asvalues for y, x_standardized, #, q, and any other desired 
+#arguments to actually fit a regression. 
 #
 #
-#Arguments:
+#ARGUMENTS:
+#
 #stan_fit: an R object of class stanfit, which allows the function to run without recompiling the stan code.
 #
 #stan_path: (character) a path pointing to a .stan file, which indicates the stan code to compile and run. If
@@ -128,16 +130,16 @@ draw_data = function(n_hist = 150,
 #
 #x_standardized (matrix) matrix of numeric values with number of rows equal to the length of y and number of columns
 #equal to p+q. It is assumed without verification that each column is standardized to whatever scale the prior 
-#expects - in Boonstra, et al., all predictors are marginally generated to have mean zero and unit variance, so no 
+#expects - in Boonstra and Barbaro, all predictors are marginally generated to have mean zero and unit variance, so no 
 #standardization is conducted. In practice, all data should be standardized to have a common scale before model fitting. 
 #If regression coefficients on the natural scale are desired, they be easily obtained through unstandardizing. 
 #
 #p, q (nonneg. integers) numbers, the sum of which add up to the number of columns in x_standardized. For the standard
 #prior, this distinction is only needed if a different constant scale parameter (beta_orig_scale, beta_aug_scale), which is 
-#the constant 'c' in the notation of Boonstra, et al., is used. 
+#the constant 'c' in the notation of Boonstra and Barbaro, is used. 
 #
 #beta_orig_scale, beta_aug_scale (pos. real) constants indicating the prior scale of the horseshoe. Both values correspond 
-#to 'c' in the notation of Boonstra, et al., because that paper never considers beta_orig_scale!=beta_aug_scale
+#to 'c' in the notation of Boonstra and Barbaro, because that paper never considers beta_orig_scale!=beta_aug_scale
 #
 #intercept_offset (vector) vector of 0's and 1's equal having the same length as y. Those observations with a value of 1 
 #have an additional constant offset in their linear predictor, effectively a different intercept. This is useful to jointly 
@@ -250,16 +252,16 @@ glm_standard = function(stan_fit = NA,
   }
 }
 
-#Program for fitting a GLM equipped with the 'naive adaptive bayes' prior evaluated in the manuscript
+#DESCRIPTION: Program for fitting a GLM equipped with the 'naive adaptive bayes' prior evaluated in the manuscript
 #
 #
-#Arguments: (only arguments distinct from glm_standard are discussed)
+#ARGUMENTS: (only those distinct from glm_standard are discussed)
 #
 #alpha_prior_mean (vector) p-length vector giving the mean of alpha from the historical analysis, 
-#corresponds to m_alpha in Boonstra, et al. 
+#corresponds to m_alpha in Boonstra and Barbaro 
 #
 #alpha_prior_cov (matrix) pxp positive definite matrix giving the variance of alpha from the historical
-#analysis, corresponds to S_alpha in Boonstra, et al. 
+#analysis, corresponds to S_alpha in Boonstra and Barbaro 
 #
 #phi_mean (real) mean of phi corresponding to a normal distribution, support is truncated to [0,1]
 #
@@ -267,7 +269,7 @@ glm_standard = function(stan_fit = NA,
 #
 #beta_aug_scale_tilde (pos. real) constant indicating the prior scale of the horseshoe for the augmented
 #covariates when phi = 1, i.e. when the historical analysis is fully used. This corresponds to tilde_c in
-#Boonstra, et al. 
+#Boonstra and Barbaro 
 
 glm_nab = function(stan_fit = NA, 
                    stan_path,
@@ -372,6 +374,7 @@ glm_nab = function(stan_fit = NA,
       theta_orig = foo$theta_orig;
       theta_aug = foo$theta_aug;
       phi = foo$phi_copy;
+      eta = foo$eta;
     }
     if(all(break_conditions)) {
       break;
@@ -387,22 +390,23 @@ glm_nab = function(stan_fit = NA,
          curr_beta = curr_beta,
          theta_orig = theta_orig,
          theta_aug = theta_aug,
-         phi = phi);
+         phi = phi,
+         eta = eta);
   }
 }
 
-#Program for fitting a GLM equipped with the 'naive adaptive bayes' prior evaluated in the manuscript
+#DESCRIPTION: Program for fitting a GLM equipped with the 'naive adaptive bayes' prior evaluated in the manuscript
 #
 #
-#Arguments: (only arguments distinct from glm_standard and glm_nab are discussed)
+#ARGUMENTS: (only those distinct from glm_standard and glm_nab are discussed)
 #
 #aug_projection: (matrix) pxq matrix that approximately projects the regression coefficients of 
 #the augmented predictors onto the space of the regression coefficients for the original predictors. 
-#This is the matrix P in the notation of Boonstra, et al. It can be calculated using the function 
+#This is the matrix P in the notation of Boonstra and Barbaro. It can be calculated using the function 
 #'create_projection'. 
 #
 #eigendecomp_hist_var: R object of class 'eigen' containing a pxp matrix of eigenvectors in each row 
-#(equivalent to v_0 in Boonstra, et al.) and a p-length vector of eigenvalues. This is by default 
+#(equivalent to v_0 in Boonstra and Barbaro) and a p-length vector of eigenvalues. This is by default 
 #equal to eigen(alpha_prior_cov)
 #
 #scale_to_variance225: a vector assumed to be such that, when multiplied by the diagonal elements of 
@@ -512,6 +516,7 @@ glm_sab = function(stan_fit = NA,
       theta_orig = foo$theta_orig;
       theta_aug = foo$theta_aug;
       phi = foo$phi_copy;
+      eta = foo$eta;
     }
     if(all(break_conditions)) {
       break;
@@ -527,25 +532,29 @@ glm_sab = function(stan_fit = NA,
          curr_beta = curr_beta,
          theta_orig = theta_orig,
          theta_aug = theta_aug,
-         phi = phi);
+         phi = phi,
+         eta = eta);
   }
 }
 
-#Helper function to make projection matrix (or matrices), which is P in the notation 
-#of Boonstra, et al.
+#DESCRIPTION: Helper function to make projection matrix (or matrices), which is P in the notation 
+#of Boonstra and Barbaro
 #
 #
-#Arguments
+#ARGUMENTS:
 #
 #x_curr_orig, x_curr_aug (matrices) matrices with equal numbers of rows and p & q columns, 
 #respectively. These are used to estimate the joint association between the original 
 #and augmented covariates, which is needed for the imputation model
 #
 #eigenvec_hist_var (matrix) pxp matrix with each row corresponding to an eigenvector. 
-#This is v_0 in Boonstra, et al. 
+#This is v_0 in Boonstra and Barbaro.
 #
-#imputes_list (list) list of lists, with each sub-list containing lower and upper indices 
-#of the imputations to use for each projection matrix. 
+#imputes_list (list) list of length-2 vectors, with each vector containing the lower and upper indices of the imputations to use 
+#for a projection matrix in the SAB method. This is best explained with an example: if imputes_list = list(c(1,15),c(16,100),c(1,100)), 
+#then three projection matrices will be constructed. One will be based upon the first 15 imputations from a run of MICE, the second based upon
+#the last 85 imputations from that same run (i.e. the 16th-100th imputations), and the third will be based upon all 100 imputations from this
+#same run. This is coded as such to allow for flexible exploration of the impact of number of imputations or variability due to imputations. 
 #
 #seed_start (pos. integer) random seed to start each imputation 
 #
@@ -636,6 +645,13 @@ create_projection = function(x_curr_orig,
   projections;
 }
 
+#DESCRIPTION: This is the parent function in the simulation study. For a given data-generating mechanism (characterized by choices 
+#of n_hist, n_curr, true_beta01, true_beta02, true_betas_orig, true_betas_aug, and covariate_args) and modeling choice (characterized 
+#by choices of local_dof, global_dof, slab_precision, nab_augmented_scale, power_prop_nonzero_prior, and sab_imputes_list, phi_params),
+#all of the methods in Boonstra and Barbaro are run against an arbitrary number of simulated datasets. The user can modify various
+#characteristics of the underlying HMC chain. A number of operating characteristics are returned, based both on estimation and prediction. 
+#
+#
 #ARGUMENTS:
 #sim_number (arbitrary) This is a label to help the user keep track of multiple different scenario settings
 #It is simply returned at the end of the function
@@ -650,16 +666,18 @@ create_projection = function(x_curr_orig,
 #
 #n_new (pos. integer) size of testing data (for prediction)
 #
-#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra, et al. 
+#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro.
 #
-#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra, et al. 
+#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra and Barbaro.
 #
-#true_betas_aug (vector) true regression coefficients corresponding to augmented covariates. Beta^o in Boonstra, et al.
+#true_betas_orig (vector) true regression coefficients corresponding to original covariates. Beta^o in Boonstra and Barbaro
 #
-#covariate_args (list) the named arguments are simple ways to govern the distribution of the predictors. Beta^a in Boonstra, et al.
+#true_betas_aug (vector) true regression coefficients corresponding to augmented covariates. Beta^a in Boonstra and Barbaro
+#
+#covariate_args (list) the named arguments are simple ways to govern the distribution of the predictors. Beta^a in Boonstra and Barbaro.
 #
 #beta_label (arbitrary) This is a label to help the user keep track of multiple different true regression 
-#coefficients. It is simply returned at the end of the function
+#coefficients. It is simply returned at the end of the function.
 #
 #covariate_args (list) the named arguments are simple ways to govern the distribution of the predictors. 
 #x_correlation is the normal correlation between any pair of predictors; x_orig_binom is the 
@@ -673,13 +691,23 @@ create_projection = function(x_curr_orig,
 #local_dof, global_dof (pos. integer) numbers indicating the degrees of freedom for lambda_j and tau, respectively. Boonstra, 
 #et al. never considered local_dof != 1 or global_dof != 1. 
 #
-#slab_precision (pos. real) the slab-part of the regularized horseshoe, this is equal to (1/d)^2 in the notation of
-#Boonstra, et al. 
+#slab_precision (pos. real) the slab-part of the regularized horseshoe, this is equivalent to (1/d)^2 in the notation of
+#Boonstra and Barbaro 
 #
-#power_prop_nonzero_prior (pos. real in [0,1]) exponent for number covariates that are assumed to be non-zero minus 1/2, e.g. p^(1/3) - 0.5
+#nab_augmented_scale (pos. real) the scale parameter to accompany the tilde_lambda shrinkage of the augmented covariates
+#when phi = 1 under NAB. This is equivalent to tilde_c in the notation of Boonstra and Barbaro.  
 #
-#sab_imputes_list (list) list of lists, with each sub-list containing lower and upper indices of the imputations to use for the SAB method. This
-#is best explained with an example: if sab_imputes_list = list(c(1,15),c(1,100))
+#power_prop_nonzero_prior (pos. real in [0,1]) exponent for number covariates that are assumed to be non-zero minus 1/2, 
+#e.g. p^(1/3) - 0.5
+#
+#sab_imputes_list (list) list of length-2 vectors, with each vector containing the lower and upper indices of the imputations to use 
+#for a projection matrix in the SAB method. This is best explained with an example: if sab_imputes_list = list(c(1,15),c(16,100),c(1,100)), 
+#then three projection matrices will be constructed. One will be based upon the first 15 imputations from a run of MICE, the second based upon
+#the last 85 imputations from that same run (i.e. the 16th-100th imputations), and the third will be based upon all 100 imputations from this
+#same run. This is coded as such to allow for flexible exploration of the impact of number of imputations or variability due to imputations. 
+#Note that each of the projection matrices is crossed with each of the hyperpriors on phi (determined by the length of phi_params), i.e. 
+#i.e. if phi_params has length 3 and sab_imputes_list has length 2, then there will be six versions of SAB run and reported. Because NAB 
+#doesn't depend upon any imputation, there would be just 3 versions of NAB run and reported in this example. 
 #
 #stan_file_path (character) local path to directory containing stan files
 #
@@ -695,10 +723,11 @@ create_projection = function(x_curr_orig,
 #
 #phi_params (list) list of named lists, each with named components 'mean' and 'sd', corresponding to the mean and standard deviation, respectively, 
 #of a normal hyperprior on phi truncated to the [0,1] interval. Its length is the number of different hyperpriors on phi to be explored 
-#for each adaptive bayesian update. In Boonstra, et al., 'Agnostic' corresponds to list(mean = 0.5, sd = 2.5), which is approximately uniform, 
-#and 'Optimistic' corresponds to list(mean = 1, sd = 0.25). The length of phi_params multiplied by the length of sab_imputes_list is how many 
-#times each of SAB and NAB will be run, i.e. if phi_params has length 2 and sab_imputes_list has length 1, then there will be two versions 
-#each of SAB and NAB. 
+#for each adaptive bayesian update. In Boonstra and Barbaro, 'Agnostic' corresponds to list(mean = 0.5, sd = 2.5), which is approximately uniform, 
+#and 'Optimistic' corresponds to list(mean = 1, sd = 0.25). Note that each of the hyperpriors on phi is crossed with each of the constructed 
+#projection matrices (determined by the length of sab_imputes_list), i.e. if phi_params has length 3 and sab_imputes_list has length 2, 
+#then there will be six versions of SAB run and reported. Because NAB doesn't depend upon any imputation, there would be just 3 versions of
+#NAB run and reported in this example. 
 #
 #mc_warmup (pos. integer) equivalent to warmup in 'stan()' function (type '?stan')
 #
@@ -750,11 +779,11 @@ run.sim <- function(sim_number,
                     power_prop_nonzero_prior = 1/3,
                     sab_imputes_list = list(c(1,100)),
                     stan_file_path = "",
-                    standard_stan_filename = "NullPrior_Stable.stan",
+                    standard_stan_filename = "RegHS_Stable.stan",
                     sab_stan_filename = "SAB_Stable.stan",
-                    sab_dev_stan_filename = NULL,
+                    sab_dev_stan_filename = "SAB_Dev.stan",
                     nab_stan_filename = "NAB_Stable.stan",
-                    nab_dev_stan_filename = NULL,
+                    nab_dev_stan_filename = "NAB_Dev.stan",
                     phi_params = list("Agnostic" = c(mean = 0.5, sd = 2.5),
                                       "Optimist" = c(mean = 1, sd = 0.25)),
                     mc_warmup = 1e3,
@@ -873,14 +902,17 @@ run.sim <- function(sim_number,
     store_sd_beta[[k]] = matrix(NA,nrow = n_sim,ncol=num_orig + num_aug,dimnames = list(NULL,c(orig_covariates,aug_covariates)));
   }
   rm(k);
+  #store posterior means and sds of phi (shrinkage weight) and eta (scale factor on S_alpha)
   store_phi_mean =
-    store_phi_sd = matrix(NA, nrow = n_sim, 
+    store_phi_sd = 
+    store_eta_mean =
+    store_eta_sd = matrix(NA, nrow = n_sim, 
                           ncol = length(grep("NAB",expanded_meth_names)) + 
                             length(grep("SAB",expanded_meth_names)),
                           dimnames = list(NULL, c(grep("NAB",expanded_meth_names,value=T),
-                                                  grep("SAB",expanded_meth_names,value=T))));#store shrinkage weight for NAB methods -how much of historical data data was used?
+                                                  grep("SAB",expanded_meth_names,value=T))));
   
-  #Calculate scale parameters so that E[1-sum kappa_j] = (1/2) * # of parameters estimated
+  #Calculate scale parameters so that E[1-sum kappa_j] = (# of parameters to fit)^(power_prop_nonzero_prior) - 0.5;
   store_hierarchical_scales = 
     prior_eff = #prior effective number of original parameters = mean(rowSums(1-kappa[orig]))
     vector("list",length(base_meth_names));
@@ -1038,7 +1070,7 @@ run.sim <- function(sim_number,
         y = c(0,1);
         x_standardized = matrix(0,length(y),p + q);
         intercept_offset = c(0,0);
-        NullPrior_template = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
+        Standard_template = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
                                           y = y, 
                                           x_standardized = x_standardized, 
                                           p = p,
@@ -1164,7 +1196,7 @@ run.sim <- function(sim_number,
           store_hierarchical_scales[[curr_method]];
         
         foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                           stan_fit = NullPrior_template,
+                           stan_fit = Standard_template,
                            y = y, 
                            x_standardized = x_standardized, 
                            p = p,
@@ -1235,7 +1267,7 @@ run.sim <- function(sim_number,
           store_hierarchical_scales[[curr_method]];
         
         foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                           stan_fit = NullPrior_template,
+                           stan_fit = Standard_template,
                            y = y, 
                            x_standardized = x_standardized, 
                            p = p,
@@ -1306,7 +1338,7 @@ run.sim <- function(sim_number,
           store_hierarchical_scales[[curr_method]];
         
         foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                           stan_fit = NullPrior_template,
+                           stan_fit = Standard_template,
                            y = y, 
                            x_standardized = x_standardized, 
                            p = p,
@@ -1427,6 +1459,7 @@ run.sim <- function(sim_number,
             curr_beta0 = foo$curr_beta0;
             curr_beta = foo$curr_beta;
             curr_phi = foo$phi;
+            curr_eta = foo$eta;
             
             ##
             store_mean_beta[[curr_method]][i,] = colMeans(curr_beta);
@@ -1446,6 +1479,9 @@ run.sim <- function(sim_number,
             store_phi_mean[i,curr_method] = mean(curr_phi);
             store_phi_sd[i,curr_method] = sd(curr_phi);
             
+            store_eta_mean[i,curr_method] = mean(curr_eta);
+            store_eta_sd[i,curr_method] = sd(curr_eta);
+            
             if(dynamic_run) {
               #Keep copy of values for further study 
               assign(paste0("beta0_",curr_method),curr_beta0);
@@ -1453,7 +1489,7 @@ run.sim <- function(sim_number,
             }
             
             mins_per_method[i,curr_method] = difftime(Sys.time(), begin_curr_method, units = "mins");
-            rm(begin_curr_method,curr_method,phi_mean,phi_sd,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi);
+            rm(begin_curr_method,curr_method,phi_mean,phi_sd,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,curr_eta);
           }
           rm(prior_type,y,x_standardized,alpha_prior_mean,alpha_prior_cov,beta_orig_scale,beta_aug_scale,beta_aug_scale_tilde,eigendecomp_hist_var,scale_to_variance225);
         } else {
@@ -1527,6 +1563,7 @@ run.sim <- function(sim_number,
             curr_beta0 = foo$curr_beta0;
             curr_beta = foo$curr_beta;
             curr_phi = foo$phi;
+            curr_eta = foo$eta;
             
             ##
             store_mean_beta[[curr_method]][i,] = colMeans(curr_beta);
@@ -1546,6 +1583,9 @@ run.sim <- function(sim_number,
             store_phi_mean[i,curr_method] = mean(curr_phi);
             store_phi_sd[i,curr_method] = sd(curr_phi);
             
+            store_eta_mean[i,curr_method] = mean(curr_eta);
+            store_eta_sd[i,curr_method] = sd(curr_eta);
+            
             if(dynamic_run) {
               #Keep copy of values for further study 
               assign(paste0("beta0_",curr_method),curr_beta0);
@@ -1553,7 +1593,7 @@ run.sim <- function(sim_number,
             }
             
             mins_per_method[i,curr_method] = difftime(Sys.time(), begin_curr_method, units = "mins");
-            rm(begin_curr_method,curr_method,phi_mean,phi_sd,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi);
+            rm(begin_curr_method,curr_method,phi_mean,phi_sd,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,curr_eta);
           }
           rm(prior_type,y,x_standardized,alpha_prior_mean,alpha_prior_cov,beta_orig_scale,beta_aug_scale,beta_aug_scale_tilde,eigendecomp_hist_var,scale_to_variance225);
         } else {
@@ -1640,6 +1680,7 @@ run.sim <- function(sim_number,
               curr_beta0 = foo$curr_beta0;
               curr_beta = foo$curr_beta;
               curr_phi = foo$phi;
+              curr_eta = foo$eta;
               
               ##
               store_mean_beta[[curr_method]][i,] = colMeans(curr_beta);
@@ -1659,6 +1700,9 @@ run.sim <- function(sim_number,
               store_phi_mean[i,curr_method] = mean(curr_phi);
               store_phi_sd[i,curr_method] = sd(curr_phi);
               
+              store_eta_mean[i,curr_method] = mean(curr_eta);
+              store_eta_sd[i,curr_method] = sd(curr_eta);
+              
               if(dynamic_run) {
                 #Keep copy of values for further study 
                 assign(paste0("beta0_",curr_method),curr_beta0);
@@ -1667,7 +1711,7 @@ run.sim <- function(sim_number,
               mins_per_method[i,curr_method] = 
                 difftime(Sys.time(), begin_curr_method, units = "mins") + #Stan running time
                 (sab_num_imputes_each[[m]]/max_sab_index) * impute_time; #Prorated imputation running time
-              rm(begin_curr_method,curr_method,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,phi_mean, phi_sd);
+              rm(begin_curr_method,curr_method,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,phi_mean, phi_sd,curr_eta);
             }
           }
           rm(m,prior_type,y,x_standardized,alpha_prior_mean,alpha_prior_cov,beta_orig_scale,beta_aug_scale,scale_to_variance225);
@@ -1720,7 +1764,7 @@ run.sim <- function(sim_number,
                             x_standardized = x_standardized, 
                             alpha_prior_mean = alpha_prior_mean,
                             alpha_prior_cov = alpha_prior_cov,
-                            aug_projection = aug_projection,
+                            aug_projection = aug_projection[[m]],#This is the only thing that varies with m
                             phi_mean = phi_mean,
                             phi_sd = phi_sd,
                             beta_orig_scale = beta_orig_scale, 
@@ -1746,6 +1790,7 @@ run.sim <- function(sim_number,
               curr_beta0 = foo$curr_beta0;
               curr_beta = foo$curr_beta;
               curr_phi = foo$phi;
+              curr_eta = foo$eta;
               
               ##
               store_mean_beta[[curr_method]][i,] = colMeans(curr_beta);
@@ -1765,13 +1810,16 @@ run.sim <- function(sim_number,
               store_phi_mean[i,curr_method] = mean(curr_phi);
               store_phi_sd[i,curr_method] = sd(curr_phi);
               
+              store_eta_mean[i,curr_method] = mean(curr_eta);
+              store_eta_sd[i,curr_method] = sd(curr_eta);
+              
               if(dynamic_run) {
                 #Keep copy of values for further study 
                 assign(paste0("beta0_",curr_method),curr_beta0);
                 assign(paste0("beta_",curr_method),curr_beta);
               }
               mins_per_method[i,curr_method] = difftime(Sys.time(), begin_curr_method, units = "mins");
-              rm(begin_curr_method,curr_method,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,phi_mean,phi_sd);
+              rm(begin_curr_method,curr_method,foo,curr_beta,curr_beta0,fitted_new,curr_kappa,curr_phi,phi_mean,phi_sd,curr_eta);
             }
           }
           rm(m,prior_type,y,x_standardized,alpha_prior_mean,alpha_prior_cov,beta_orig_scale,beta_aug_scale,scale_to_variance225);
@@ -1852,6 +1900,8 @@ run.sim <- function(sim_number,
        posterior_eff_aug = posterior_eff_aug,
        phi_mean = store_phi_mean,
        phi_sd = store_phi_sd,
+       eta_mean = store_eta_mean,
+       eta_sd = store_eta_sd,
        mse_beta = mse_beta,
        mse_beta_orig = mse_beta_orig,
        mse_beta_aug = mse_beta_aug, 
