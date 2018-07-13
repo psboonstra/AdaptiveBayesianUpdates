@@ -31,9 +31,9 @@ tryCatch.W.E <- function(expr)
 #
 #n_new (pos. integer) size of testing data (for prediction)
 #
-#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro 
+#true_mu_hist (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro 
 #
-#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra and Barbaro 
+#true_mu_curr (real) true intercept for generating current / new model. mu in Boonstra and Barbaro 
 #
 #true_betas_orig (vector) true regression coefficients corresponding to original covariates. Beta^o in Boonstra and Barbaro
 #
@@ -48,8 +48,8 @@ tryCatch.W.E <- function(expr)
 draw_data = function(n_hist = 150,
                      n_curr = 50,
                      n_new = 100,
-                     true_beta01 = 0,
-                     true_beta02 = 0,
+                     true_mu_hist = 0,
+                     true_mu_curr = 0,
                      true_betas_orig = 0,
                      true_betas_aug = 0,
                      covariate_args = list(x_correlation = 0, 
@@ -59,7 +59,7 @@ draw_data = function(n_hist = 150,
   
   p = length(true_betas_orig);
   q = length(true_betas_aug);
-  stopifnot(length(true_beta01) == 1 && length(true_beta02) == 1);
+  stopifnot(length(true_mu_hist) == 1 && length(true_mu_curr) == 1);
   
   x_all = matrix(rnorm((n_hist + n_curr + n_new)*(p+q)),nrow=n_hist + n_curr + n_new)%*%chol(diag(1 - covariate_args$x_correlation,p+q) + covariate_args$x_correlation);#original covariates are N(0,1)
   x_all_orig = x_all[,1:p,drop = F];
@@ -77,7 +77,7 @@ draw_data = function(n_hist = 150,
   lin_pred_x_orig = drop(x_all_orig%*%true_betas_orig);
   lin_pred_x_aug = drop(x_all_aug%*%true_betas_aug);
   #Note the difference in intercepts between historical data and current data
-  risk_all = 1/(1+exp(-c(rep(true_beta01,n_hist),rep(true_beta02,n_curr+n_new)) - lin_pred_x_orig - lin_pred_x_aug));
+  risk_all = 1/(1+exp(-c(rep(true_mu_hist,n_hist),rep(true_mu_curr,n_curr+n_new)) - lin_pred_x_orig - lin_pred_x_aug));
   
   y_all =  rbinom(n_hist + n_curr + n_new, 1, risk_all);
   
@@ -140,6 +140,12 @@ draw_data = function(n_hist = 150,
 #
 #beta_orig_scale, beta_aug_scale (pos. real) constants indicating the prior scale of the horseshoe. Both values correspond 
 #to 'c' in the notation of Boonstra and Barbaro, because that paper never considers beta_orig_scale!=beta_aug_scale
+#
+#local_dof, global_dof (pos. integer) numbers indicating the degrees of freedom for lambda_j and tau, respectively. Boonstra, 
+#et al. never considered local_dof != 1 or global_dof != 1. 
+#
+#slab_precision (pos. real) the slab-part of the regularized horseshoe, this is equivalent to (1/d)^2 in the notation of
+#Boonstra and Barbaro 
 #
 #intercept_offset (vector) vector of 0's and 1's equal having the same length as y. Those observations with a value of 1 
 #have an additional constant offset in their linear predictor, effectively a different intercept. This is useful to jointly 
@@ -275,10 +281,10 @@ glm_standard = function(stan_fit = NA,
 
 glm_nab = function(stan_fit = NA, 
                    stan_path,
-                   y, 
-                   x_standardized, 
-                   alpha_prior_mean,
-                   alpha_prior_cov,
+                   y = c(0,1),
+                   x_standardized = matrix(0,length(y),6), 
+                   alpha_prior_mean = rep(0, 3),
+                   alpha_prior_cov = diag(1, 3),
                    phi_mean = 0.5,
                    phi_sd = 2.5,
                    beta_orig_scale = 1, 
@@ -312,6 +318,11 @@ glm_nab = function(stan_fit = NA,
   
   p = length(alpha_prior_mean);
   q = ncol(x_standardized) - p;
+  if(p == 1) {
+    alpha_prior_mean = array(alpha_prior_mean,dim=1);
+    sqrt_eigenval_hist_var = array(sqrt_eigenval_hist_var,dim=1);
+    scale_to_variance225 = array(scale_to_variance225,dim=1);
+  }
   
   max_divergences = -Inf;
   accepted_divergences = Inf;
@@ -419,11 +430,11 @@ glm_nab = function(stan_fit = NA,
 
 glm_sab = function(stan_fit = NA, 
                    stan_path,
-                   y, 
-                   x_standardized, 
-                   alpha_prior_mean,
-                   alpha_prior_cov,
-                   aug_projection,
+                   y = c(0,1),
+                   x_standardized = matrix(0,length(y),6), 
+                   alpha_prior_mean = rep(0, 3),
+                   alpha_prior_cov = diag(1, 3),
+                   aug_projection = diag(1, 3),
                    phi_mean = 0.5,
                    phi_sd = 2.5,
                    beta_orig_scale = 1, 
@@ -456,6 +467,11 @@ glm_sab = function(stan_fit = NA,
   
   p = length(alpha_prior_mean);
   q = ncol(x_standardized) - p;
+  if(p == 1) {
+    alpha_prior_mean = array(alpha_prior_mean,dim=1);
+    sqrt_eigenval_hist_var = array(sqrt_eigenval_hist_var,dim=1);
+    scale_to_variance225 = array(scale_to_variance225,dim=1);
+  }
   
   max_divergences = -Inf;
   accepted_divergences = Inf;
@@ -573,7 +589,7 @@ create_projection = function(x_curr_orig,
                              x_curr_aug,
                              eigenvec_hist_var,
                              imputes_list = list(c(1,15)),
-                             seed_start = 1,
+                             seed_start = sample(.Machine$integer.max,1),
                              predictorMatrix = NULL) {
   require(mice);
   require(magrittr);
@@ -652,7 +668,7 @@ create_projection = function(x_curr_orig,
 }
 
 #DESCRIPTION: This is the parent function in the simulation study. For a given data-generating mechanism (characterized by choices 
-#of n_hist, n_curr, true_beta01, true_beta02, true_betas_orig, true_betas_aug, and covariate_args) and modeling choice (characterized 
+#of n_hist, n_curr, true_mu_hist, true_mu_curr, true_betas_orig, true_betas_aug, and covariate_args) and modeling choice (characterized 
 #by choices of local_dof, global_dof, slab_precision, nab_augmented_scale, power_prop_nonzero_prior, and sab_imputes_list, phi_params),
 #all of the methods in Boonstra and Barbaro are run against an arbitrary number of simulated datasets. The user can modify various
 #characteristics of the underlying HMC chain. A number of operating characteristics are returned, based both on estimation and prediction. 
@@ -672,9 +688,9 @@ create_projection = function(x_curr_orig,
 #
 #n_new (pos. integer) size of testing data (for prediction)
 #
-#true_beta01 (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro.
+#true_mu_hist (real) true intercept for generating historical model. mu_hist in Boonstra and Barbaro.
 #
-#true_beta02 (real) true intercept for generating current / new model. mu in Boonstra and Barbaro.
+#true_mu_curr (real) true intercept for generating current / new model. mu in Boonstra and Barbaro.
 #
 #true_betas_orig (vector) true regression coefficients corresponding to original covariates. Beta^o in Boonstra and Barbaro
 #
@@ -771,8 +787,8 @@ run.sim <- function(sim_number,
                     n_hist,
                     n_curr,
                     n_new,
-                    true_beta01,
-                    true_beta02,
+                    true_mu_hist,
+                    true_mu_curr,
                     true_betas_orig,
                     true_betas_aug,
                     beta_label,
@@ -1013,8 +1029,8 @@ run.sim <- function(sim_number,
     complete_dat = draw_data(n_hist = 5, 
                              n_curr = 5,
                              n_new = round(max(1e5, 2e7 / (num_orig + num_aug))),
-                             true_beta01 = true_beta01,
-                             true_beta02 = true_beta02,
+                             true_mu_hist = true_mu_hist,
+                             true_mu_curr = true_mu_curr,
                              true_betas_orig = true_betas_orig,
                              true_betas_aug = true_betas_aug,
                              covariate_args = covariate_args);
@@ -1036,8 +1052,8 @@ run.sim <- function(sim_number,
     complete_dat = draw_data(n_hist = n_hist, 
                              n_curr = n_curr,
                              n_new = n_new,
-                             true_beta01 = true_beta01,
-                             true_beta02 = true_beta02,
+                             true_mu_hist = true_mu_hist,
+                             true_mu_curr = true_mu_curr,
                              true_betas_orig = true_betas_orig,
                              true_betas_aug = true_betas_aug,
                              covariate_args = covariate_args);
@@ -1071,116 +1087,20 @@ run.sim <- function(sim_number,
       ## Compile templates ====##########################################################################
       if(!stan_compiled) {
         begin_compile = Sys.time();
-        p = 3;
-        q = 3;
-        y = c(0,1);
-        x_standardized = matrix(0,length(y),p + q);
-        intercept_offset = c(0,0);
-        Standard_template = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                                          y = y, 
-                                          x_standardized = x_standardized, 
-                                          p = p,
-                                          q = q,
-                                          beta_orig_scale = 1, 
-                                          beta_aug_scale = 1, 
-                                          local_dof = 1, 
-                                          global_dof = 1, 
-                                          slab_precision = 1,
-                                          intercept_offset = intercept_offset,
-                                          only_prior = T, 
-                                          mc_warmup = 1, 
-                                          mc_iter_after_warmup = 1, 
-                                          mc_chains = 1);
         
-        alpha_prior_mean = rnorm(p);
-        alpha_prior_cov = diag(rexp(p));
-        
-        NAB_template = glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename),
-                               y = y, 
-                               x_standardized = x_standardized, 
-                               alpha_prior_mean = alpha_prior_mean,
-                               alpha_prior_cov = alpha_prior_cov,
-                               phi_mean = 0.5,
-                               phi_sd = 0.5,
-                               beta_orig_scale = 1, 
-                               beta_aug_scale = 1, 
-                               beta_aug_scale_tilde = 1,
-                               local_dof = 1, 
-                               global_dof = 1, 
-                               slab_precision = 1,
-                               only_prior = T, 
-                               mc_warmup = 1, 
-                               mc_iter_after_warmup = 1, 
-                               mc_chains = 1);
-        
-        if(!is.null(nab_dev_stan_filename) && (!"NAB_dev" %in% skip_methods)) {
-          NAB_dev_template = glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename),
-                                     y = y, 
-                                     x_standardized = x_standardized, 
-                                     alpha_prior_mean = alpha_prior_mean,
-                                     alpha_prior_cov = alpha_prior_cov,
-                                     phi_mean = 0.5,
-                                     phi_sd = 0.5,
-                                     beta_orig_scale = 1, 
-                                     beta_aug_scale = 1, 
-                                     beta_aug_scale_tilde = 1,
-                                     local_dof = 1, 
-                                     global_dof = 1, 
-                                     slab_precision = 1,
-                                     only_prior = T, 
-                                     mc_warmup = 1, 
-                                     mc_iter_after_warmup = 1, 
-                                     mc_chains = 1);
+        assign("Standard_template",glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename)));
+        assign("NAB_template",glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename)));
+        if(!is.null(nab_dev_stan_filename) && (!"NAB_Dev" %in% skip_methods)) {
+          assign("NAB_Dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
         }
-        aug_projection = matrix(rnorm(p * q), nrow = p, ncol = q);
-        SAB_template = glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename),
-                               y = y, 
-                               x_standardized = x_standardized, 
-                               alpha_prior_mean = alpha_prior_mean,
-                               alpha_prior_cov = alpha_prior_cov,
-                               aug_projection = aug_projection,
-                               phi_mean = 0.5,
-                               phi_sd = 0.5,
-                               beta_orig_scale = 1, 
-                               beta_aug_scale = 1, 
-                               local_dof = 1, 
-                               global_dof = 1, 
-                               slab_precision = 1,
-                               only_prior = T, 
-                               mc_warmup = 1, 
-                               mc_iter_after_warmup = 1, 
-                               mc_chains = 1);
-        if(!is.null(sab_dev_stan_filename) && (!"SAB_dev" %in% skip_methods)) {
-          SAB_dev_template = glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename),
-                                     y = y, 
-                                     x_standardized = x_standardized, 
-                                     alpha_prior_mean = alpha_prior_mean,
-                                     alpha_prior_cov = alpha_prior_cov,
-                                     aug_projection = aug_projection,
-                                     phi_mean = 0.5,
-                                     phi_sd = 0.5,
-                                     beta_orig_scale = 1, 
-                                     beta_aug_scale = 1, 
-                                     local_dof = 1, 
-                                     global_dof = 1, 
-                                     slab_precision = 1,
-                                     only_prior = T, 
-                                     mc_warmup = 1, 
-                                     mc_iter_after_warmup = 1, 
-                                     mc_chains = 1);
+        assign("SAB_template",glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename)));
+        if(!is.null(sab_dev_stan_filename) && (!"SAB_Dev" %in% skip_methods)) {
+          assign("SAB_Dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
         }
+        end_compile = Sys.time();  
         stan_compiled = T;
-        rm(p,
-           q,
-           y,
-           intercept_offset,
-           x_standardized,
-           alpha_prior_mean,
-           alpha_prior_cov,
-           aug_projection);
-        end_compile = Sys.time();
+        
       } 
-      
       
       only_prior = F;
       p = num_orig;
@@ -1410,18 +1330,13 @@ run.sim <- function(sim_number,
         if(!curr_base_method %in% skip_methods) {
           y = y_curr;
           x_standardized = cbind(x_curr_orig,x_curr_aug);
-          if(p == 1) {
-            alpha_prior_mean = array(colMeans(beta_Historical),dim=1);
-          } else {
-            alpha_prior_mean = colMeans(beta_Historical);
-          }
+          alpha_prior_mean = colMeans(beta_Historical);
           alpha_prior_cov = var(beta_Historical);
           
           beta_orig_scale = 
             beta_aug_scale = store_hierarchical_scales[[curr_base_method]];
           beta_aug_scale_tilde = store_hierarchical_scales[[paste0(curr_base_method,"_aug_tilde")]];
-          prior_type = names(phi_params)[1];
-          
+
           scale_to_variance225 = diag(alpha_prior_cov) / 225;
           eigendecomp_hist_var = eigen(alpha_prior_cov);
           prior_type = names(phi_params)[1];
@@ -1514,11 +1429,7 @@ run.sim <- function(sim_number,
         if(!paste0(curr_base_method,"_dev") %in% skip_methods) {
           y = y_curr;
           x_standardized = cbind(x_curr_orig,x_curr_aug);
-          if(p == 1) {
-            alpha_prior_mean = array(colMeans(beta_Historical),dim=1);
-          } else {
-            alpha_prior_mean = colMeans(beta_Historical);
-          }
+          alpha_prior_mean = colMeans(beta_Historical);
           alpha_prior_cov = var(beta_Historical);
           
           beta_orig_scale = 
@@ -1632,13 +1543,9 @@ run.sim <- function(sim_number,
           ##
           y = y_curr;
           x_standardized = cbind(x_curr_orig,x_curr_aug);
-          if(p == 1) {
-            alpha_prior_mean = array(colMeans(beta_Historical),dim=1);
-          } else {
-            alpha_prior_mean = colMeans(beta_Historical);
-          }
-          
+          alpha_prior_mean = colMeans(beta_Historical);
           alpha_prior_cov = var(beta_Historical);
+          
           scale_to_variance225 = diag(alpha_prior_cov) / 225;
           beta_orig_scale = 
             beta_aug_scale = store_hierarchical_scales[[curr_base_method]];
@@ -1741,13 +1648,9 @@ run.sim <- function(sim_number,
         if(!paste0(curr_base_method,"_dev") %in% skip_methods) {
           y = y_curr;
           x_standardized = cbind(x_curr_orig,x_curr_aug);
-          if(p == 1) {
-            alpha_prior_mean = array(colMeans(beta_Historical),dim=1);
-          } else {
-            alpha_prior_mean = colMeans(beta_Historical);
-          }
-          
+          alpha_prior_mean = colMeans(beta_Historical);
           alpha_prior_cov = var(beta_Historical);
+          
           scale_to_variance225 = diag(alpha_prior_cov) / 225;
           beta_orig_scale = 
             beta_aug_scale = store_hierarchical_scales[[curr_base_method]];
@@ -1889,8 +1792,8 @@ run.sim <- function(sim_number,
        max_rhat = max_rhat,
        generating_params = list(n_hist = n_hist,
                                 n_curr = n_curr,
-                                true_beta01 = true_beta01,
-                                true_beta02 = true_beta02,
+                                true_mu_hist = true_mu_hist,
+                                true_mu_curr = true_mu_curr,
                                 true_betas_orig = true_betas_orig,
                                 true_betas_aug = true_betas_aug,
                                 true_alphas_orig = true_alphas_orig,
@@ -2093,3 +1996,140 @@ calculate_m_eff = function(scale1,
               prior_num2 = prior_num2));
 }
 
+
+as.dummy = function(x,full_rank=T) {
+  single.as.dummy <- function(x,full_rank) {
+    levels_x = levels(x);
+    1*matrix(rep(x,nlevels(x)) == rep(levels_x,each=length(x)),nrow=length(x),ncol=nlevels(x),dimnames=list(NULL,levels_x))[,(1+full_rank):length(levels_x),drop=F];
+  }
+  if("factor"%in%class(x)) {
+    if(length(full_rank)>1) {warning("ignoring all but first element of 'full_rank'");}
+    result = single.as.dummy(x,full_rank[1]);
+  } else if("logical"%in%class(x)) {
+    if(length(full_rank)>1) {warning("ignoring all but first element of 'full_rank'");}
+    result = single.as.dummy(factor(x,levels=c(F,T)),full_rank[1]);
+  } else if("integer"%in%class(x)) {
+    if(length(full_rank)>1) {warning("ignoring all but first element of 'full_rank'");}
+    result = single.as.dummy(factor(x,levels=sort(unique(x),decreasing = T)),full_rank[1]);
+  } else if(class(x)=="data.frame") {
+    result = NULL;
+    full_rank = rep(full_rank,length=ncol(x));
+    for(i in 1:ncol(x)) {
+      if("factor"%in%class(x[,i])) {
+        foo = single.as.dummy(x[,i],full_rank[i]);
+        colnames(foo) = paste0(colnames(x)[i],colnames(foo));
+        result = cbind(result,foo);
+      } else if("logical"%in%class(x[,i])) {
+        foo = single.as.dummy(factor(x[,i],levels=c(F,T)),full_rank[i]);
+        colnames(foo) = paste0(colnames(x)[i],colnames(foo));
+        result = cbind(result,foo);
+      } else if("integer"%in%class(x[,i])) {
+        foo = single.as.dummy(factor(x[,i],levels=sort(unique(x[,i]),decreasing = T)),full_rank[i]);
+        colnames(foo) = paste0(colnames(x)[i],colnames(foo));
+        result = cbind(result,foo);
+      } else {
+        stop("x must be either a factor, logical, or a dataframe comprised of factors/logicals/integers");
+      }
+    } 
+  } else {
+    stop("x must be either a factor, logical, or a dataframe comprised of factors/logicals/integers");
+  }
+  data.frame(result);
+}
+
+#DESCRIPTION: Program for fitting a GLM equipped with a regularized student-t prior on the regression coefficients, 
+#parametrized using the normal-inverse-gamma distribution. The 'regularization' refers to the fact that the inverse-gamma
+#scale is has a finite upper bound that it smoothly approaches. This method was not used in the simulation study but was used 
+#in the data analysis. Specifically, it corresponds to 'PedRESC2'. 
+#
+#
+#ARGUMENTS: (only those distinct from glm_standard are discussed)
+#
+#beta_scale (pos. real) constants indicating the prior scale of the student-t prior. 
+#
+#dof (pos. integer) degrees of freedom for the student-t prior
+
+glm_studt = function(stan_fit = NA, 
+                     stan_path,
+                     y = c(0,1),
+                     x_standardized = matrix(0,length(y),3), 
+                     beta_scale = 1, 
+                     dof = 1, 
+                     slab_precision = (1/15)^2, 
+                     only_prior = F, 
+                     mc_warmup = 50, 
+                     mc_iter_after_warmup = 50, 
+                     mc_chains = 1, 
+                     mc_thin = 1, 
+                     mc_stepsize = 0.1, 
+                     mc_adapt_delta = 0.9,
+                     mc_max_treedepth = 15,
+                     ntries = 1) {
+  
+  max_divergences = -Inf;
+  accepted_divergences = Inf;
+  curr_try = 1;
+
+  while(curr_try <= ntries) {
+    assign("curr_fit",tryCatch.W.E(stan(file = stan_path,
+                                        fit = stan_fit,
+                                        data = list(n_stan = length(y),
+                                                    p_stan = ncol(x_standardized),
+                                                    y_stan = y,
+                                                    x_standardized_stan = x_standardized,
+                                                    dof_stan = dof,
+                                                    beta_scale_stan = beta_scale,
+                                                    slab_precision_stan = slab_precision,
+                                                    only_prior = as.integer(only_prior)), 
+                                        warmup = mc_warmup, 
+                                        iter = mc_iter_after_warmup + mc_warmup, 
+                                        chains = mc_chains, 
+                                        thin = mc_thin,
+                                        control = list(stepsize = mc_stepsize,
+                                                       adapt_delta = mc_adapt_delta,
+                                                       max_treedepth = mc_max_treedepth)))); 
+    if("simpleError"%in%class(curr_fit$value) || "error"%in%class(curr_fit$value)) {
+      stop(curr_fit$value);
+    }
+    if(!"stanfit"%in%class(stan_fit)) {
+      break;
+    }
+    divergent_check = unlist(lapply(curr_fit$warning,grep,pattern="divergent transitions",value=T));
+    rhat_check = max(summary(curr_fit$value)$summary[,"Rhat"],na.rm=T);
+    #Originally, the break conditions were baesd upon having both no divergent transitions as well as a max Rhat (i.e. gelman-rubin 
+    #diagnostic) sufficiently close to 1. I subsequently changed the conditions to be based only upon the first, which is reflected
+    #by setting rhat = T immediately below. 
+    break_conditions = c(divergence = F, rhat = T);
+    if(length(divergent_check) == 0) {#corresponds to zero divergent transitions
+      curr_divergences = 0;
+      max_divergences = max(max_divergences,curr_divergences,na.rm=T);
+      break_conditions["divergence"] = T;
+    } else {#corresponds to > zero divergent transitions
+      curr_divergences <- max(as.numeric(strsplit(divergent_check," ")$message),na.rm=T);
+      max_divergences = max(max_divergences,curr_divergences,na.rm=T);
+      curr_try = curr_try + 1;
+    }
+    #update if fewer divergent transitions were found
+    if(curr_divergences < accepted_divergences) {
+      accepted_divergences = curr_divergences;
+      max_rhat = rhat_check;
+      foo = rstan::extract(curr_fit$value);
+      curr_beta0 = as.numeric(foo$mu);
+      curr_beta = foo$beta;
+      theta = foo$theta;
+    }
+    if(all(break_conditions)) {
+      break;
+    }
+  }
+  if(!"stanfit"%in%class(stan_fit)) {
+    curr_fit$value;
+  } else {
+    list(accepted_divergences = accepted_divergences,
+         max_divergences = max_divergences,
+         max_rhat = max_rhat,
+         curr_beta0 = curr_beta0,
+         curr_beta = curr_beta,
+         theta = theta);
+  }
+}

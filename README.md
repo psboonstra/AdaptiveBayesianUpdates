@@ -1,7 +1,9 @@
 # Adaptive Bayesian Updates
 
+### Philip S Boonstra and Ryan P Barbaro; Incorporating Historical Models with Adaptive Bayesian Updates (2018)
+
 ## Executive Summary
-The functions <samp>glm_standard</samp>, <samp>glm_nab</samp>, and <samp>glm_sab</samp> contained in the file <samp>Functions.R</samp> represent the primary statistical contribution from this manuscript. With these functions, the mean and variance of the coefficients from a historical regression model, and the usual ingredients for fitting the current model of interest, a user can fit a Bayesian logistic regression with the adaptive priors that are described in the manuscript.
+The functions <samp>glm_standard</samp>, <samp>glm_nab</samp>, and <samp>glm_sab</samp> contained in the file <samp>Functions.R</samp> represent the primary statistical contribution from this manuscript. With these functions, plus the mean and variance of the coefficients from a historical regression model and the usual ingredients for fitting the current model of interest, a user can fit a Bayesian logistic regression with the adaptive priors that are described in the manuscript.
 
 ## Further details
 
@@ -27,6 +29,14 @@ The STAN files are described below. Note that these currently all implement a lo
 <samp>NAB_Stable.stan</samp>, <samp>NAB_Dev.stan</samp> both implement the 'naive adaptive Bayesian' prior, as described in Boonstra and Barbaro, applied to a logistic regression. The '<samp>_Dev</samp>' modifier was initially used for testing development versions of the prior against the current stable version. For the results reported in Boonstra and Barbaro, the only difference between the two is in the hyperprior distribution on &eta; (eta): in the former it is distributed as Inv-Gamma(2.5, 2.5), and in the latter it is Inv-Gamma(25, 25). The 'stable' versions are reported in the main manuscript. An <samp>R</samp> user calls this with the function <samp>glm_nab</samp> in <samp>Functions.R</samp>. 
 
 <samp>SAB_Stable.stan</samp>, <samp>SAB_Dev.stan</samp> are analogous versions of the 'sensible adaptive Bayesian' prior. An <samp>R</samp> user calls this with the function <samp>glm_sab</samp> in <samp>Functions.R</samp>. 
+
+Built into the functions <samp>glm_</samp>*** functions is a check for divergent iterations. The function will re-run if any divergent transitions are detected, up to a user-specified number of times, and return the results with the fewest. By virtue of the way this check is constructed, the user will see the following warning when divergent transitions are encountered:
+
+<code>
+Warning message:
+In glm_sab(stan_path = paste0(stan_file_path, sab_stan_filename),  :
+  NAs introduced by coercion
+</code>
 
 ### <samp>R</samp> data objects
 These are the compiled versions of the programs described in the STAN file. If R does not find these, it will go ahead and recompile the STAN files and create new versions. 
