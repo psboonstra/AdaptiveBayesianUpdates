@@ -1218,9 +1218,9 @@ run.sim <- function(sim_number,
         accepted_divergences_by_method[i,curr_method] = foo$accepted_divergences;
         max_rhat[i,curr_method] = foo$max_rhat;
         
+        curr_beta0 = foo$hist_beta0;
         #Historical model does not estimate all betas; for purposes of performance, we 
         #interpret this as infinite shrinkage of beta_aug
-        curr_beta0 = foo$hist_beta0;
         curr_beta = cbind(foo$curr_beta,matrix(0, nrow = nrow(foo$curr_beta), ncol = q));
         
         ##
@@ -1289,7 +1289,10 @@ run.sim <- function(sim_number,
         accepted_divergences_by_method[i,curr_method] = foo$accepted_divergences;
         max_rhat[i,curr_method] = foo$max_rhat;
         
-        curr_beta0 = foo$curr_beta0;
+        #The curr_beta0 assignment below is not a typo: 'hist_beta0' corresponds to those for whom 'intercept_offset = 0', 
+        #and 'curr_beta0' corresponds to those for whom 'intercept_offset = 1'. Because nobody falls in the latter category, 
+        #the parameter that controls this offset is not identified and should not be included. 
+        curr_beta0 = foo$hist_beta0;
         curr_beta = foo$curr_beta;
         
         ##

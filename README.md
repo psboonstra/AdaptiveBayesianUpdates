@@ -10,7 +10,7 @@ The functions <samp>glm_nab</samp> and <samp>glm_sab</samp> contained in the fil
 
 ## Further details
 
-In more detail, there are ten files included in this repository (in addition to this README): one text file (ending in <samp>.txt</samp>), three <samp>R</samp> scripts (ending in  <samp>.R</samp>), and six STAN functions (ending in  <samp>.stan</samp>). The simulation studies reported in Boonstra and Barbaro were run using commit 5; however, all subsequent commits have not changed any methodology and should therefore yield the same results, subject to simulation error. This has not been thoroughly checked. 
+In more detail, there are eleven files included in this repository (in addition to this README): one text file (ending in <samp>.txt</samp>), four <samp>R</samp> scripts (ending in  <samp>.R</samp>), and six STAN functions (ending in  <samp>.stan</samp>). The simulation studies reported in Boonstra and Barbaro were run using commit 5; however, all subsequent commits have not changed any methodology and should therefore yield the same results, subject to simulation error. This has not been thoroughly checked. 
 
 ### Text file
 <samp>runABUSims.txt</samp> is the script for running the simulation study on a cluster using SLURM. The following script does this:
@@ -18,11 +18,13 @@ In more detail, there are ten files included in this repository (in addition to 
 <code> sbatch runABUSims.txt </code>
 
 ### <samp>R</samp> files
-<samp>runMe.R</samp> provides two means of interfacing with the code. On a local machine, the user may choose a specific scenario (as described in that script) and run the code locally on his/her machine. On a cluster running SLURM, the user can use this script to submit multiple jobs simultaneously. 
+<samp>runMe.R</samp> should be used to conduct a large-scale simulation study. On a local machine, the user may choose a specific scenario (as described in that script) and run the code locally on his/her machine. On a cluster running SLURM, the user can use this script to submit multiple jobs simultaneously. 
 
 <samp>Functions.R</samp> provides all of the necessary functions to fit the methods described in the paper as well as to run the simulation study. 
 
 <samp>GenParams.R</samp> constructs inputs for running the simulation study. As described in the descriptions of this script and <samp>runMe.R</samp>, these inputs can be overwritten by the user.
+
+<samp>Example.R</samp> creates a single simulated dataset and demonstrates how to fit the methods described in the manuscript. 
 
 ### STAN files
 The STAN files are described below. Note that these currently all implement a logistic link, but changing to a non-logistic link (i.e. log, probit, etc.) will be relatively easy. Upon using these for the first time, <samp>R</samp> will need to compile these programs, creating an R data object (ending in <samp>.rds</samp>) in the current working directory. Recompilation of the STAN files are not necessary as long as they stay the same.
@@ -42,6 +44,18 @@ Warning message:
 In glm_sab(stan_path = paste0(stan_file_path, sab_stan_filename),  :
   NAs introduced by coercion
 </code>
+
+The compiler will also warn you that a log absolute determinant of a Jacobian is needed. This is accounted for through the calculation of the normalizing constant:
+
+<code>
+DIAGNOSTIC(S) FROM PARSER:
+Warning (non-fatal):
+Left-hand side of sampling statement (~) may contain a non-linear transform of a parameter or local variable.
+If it does, you need to include a target += statement with the log absolute determinant of the Jacobian of the transform.
+Left-hand-side of sampling statement:
+    normalized_beta ~ normal(...)
+</code>
+
 
 
 ### Note, 10-Jul-2018:

@@ -1,0 +1,395 @@
+#DESCRIPTION: Example to demonstrate the R functions. 
+
+#This script expects that the following files are in your current working directory:
+#RegHS_Stable.stan, 
+#SAB_Stable.stan, 
+#SAB_Dev.stan, 
+#NAB_Stable.stan,
+#NAB_Dev.stan,
+#Functions.R
+#You can point to a different directory for the stan files by changing the object 'stan_file_path'. 
+
+rm(list=ls(all=TRUE));
+library(mice);library(Hmisc);library(MASS);
+library(rstan);library(Matrix);library(mnormt);
+library(tidyr);library(plyr);library(dplyr);require(magrittr);
+phils_computer = T;
+if(phils_computer) {
+  read_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/revisionSims/";
+  write_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/";
+} else {
+  read_path = 
+    write_path = "";
+}
+
+options(mc.cores = parallel::detectCores());
+rstan_options(auto_write = TRUE);
+
+stan_file_path = "";
+source("Functions.R");
+stan_compiled = F;
+
+## Draw Data ====##########################################################################
+#Choose your own values
+set.seed(1);
+n_hist = 500;
+n_curr = 200;
+n_new = 1e3;
+true_mu_hist = 0;
+true_mu_curr = -2.5;#Note the difference in baseline prevalence
+true_betas_orig = c(2,-2,1,-1);
+true_betas_aug = c(-1,-1,0.5,0.5,-0.25,-0.25);
+covariate_args = list(x_correlation = 0.2,
+                      x_orig_binom = 1:length(true_betas_orig),
+                      x_aug_binom = 1:length(true_betas_aug));
+complete_dat = draw_data(n_hist = n_hist, 
+                         n_curr = n_curr,
+                         n_new = n_new,
+                         true_mu_hist = true_mu_hist,
+                         true_mu_curr = true_mu_curr,
+                         true_betas_orig = true_betas_orig,
+                         true_betas_aug = true_betas_aug,
+                         covariate_args = covariate_args);
+orig_covariates = paste0("orig",1:length(true_betas_orig));
+aug_covariates = paste0("aug",1:length(true_betas_aug));
+y_hist = complete_dat$y_hist;
+y_curr = complete_dat$y_curr;
+x_hist_orig = as.matrix(complete_dat$x_hist_orig);
+x_curr_orig = as.matrix(complete_dat$x_curr_orig);
+colnames(x_hist_orig) = 
+  colnames(x_curr_orig) = orig_covariates;
+x_curr_aug = as.matrix(complete_dat$x_curr_aug);
+colnames(x_curr_aug) = aug_covariates;
+p = length(true_betas_orig);
+q = length(true_betas_aug);
+
+##Methods to fit====##########################################################################
+phi_params = list("Agnostic" = c(mean = 0.5, sd = 2.5),
+                  "Optimist" = c(mean = 1, sd = 0.25));
+
+base_meth_names = c("Historical",
+                    "Standard",
+                    "NAB",
+                    "SAB");
+expanded_meth_names = c("Historical",
+                        "Standard",
+                        paste0("NAB",names(phi_params)),
+                        paste0("SAB",names(phi_params)));
+
+## Model Params====##########################################################################
+local_dof = 1;
+global_dof = 1;
+slab_precision = (1/15)^2;
+nab_augmented_scale = 0.05;
+sab_imputes_list = list(c(1,100));
+stopifnot(class(sab_imputes_list) == "list");
+sab_num_imputes_each = unlist(lapply(sab_imputes_list,diff)) + 1;
+max_sab_index = max(unlist(lapply(sab_imputes_list,max)));
+min_sab_index = min(unlist(lapply(sab_imputes_list,min)));
+store_hierarchical_scales = 
+  prior_eff = #prior effective number of original parameters = mean(rowSums(1-kappa[orig]))
+  vector("list",length(base_meth_names));
+names(store_hierarchical_scales) = names(prior_eff) = base_meth_names;
+power_prop_nonzero_prior = 1/3;
+#Historical: access to historical data alone, with a skeptical prior. This is both a method in and of itself as well as
+#the 'prior' analysis that will be provided to the SAB methods. 
+foo = solve_for_hiershrink_scale(target_mean1 = -0.5 + p ^ power_prop_nonzero_prior,
+                                 target_mean2 = NA,
+                                 npar1 = p, 
+                                 npar2 = 0,
+                                 local_dof = local_dof, 
+                                 regional_dof = global_dof, 
+                                 global_dof = global_dof,
+                                 n = n_hist,
+                                 sigma = 2, 
+                                 n_sim = round(2e6/(p + q)),
+                                 do_local = T,
+                                 do_regional = F,
+                                 do_global = T,
+                                 slab_precision = slab_precision);
+store_hierarchical_scales$Historical = foo$scale1;
+prior_eff$Historical = foo$prior_num1;
+rm(foo);
+#Standard: access to current data alone, with a skeptical prior. 
+#This also corresponds to the standard scales for SAB and NAB, where standard means that
+#no historical information is used
+foo = solve_for_hiershrink_scale(target_mean1 = -0.5 + (p + q) ^ power_prop_nonzero_prior,
+                                 target_mean2 = NA,
+                                 npar1 = p + q, 
+                                 npar2 = 0,
+                                 local_dof = local_dof, 
+                                 regional_dof = global_dof, 
+                                 global_dof = global_dof,
+                                 n = n_curr,
+                                 sigma = 2, 
+                                 n_sim = round(2e6/(p + q)),
+                                 do_local = T,
+                                 do_regional = F,
+                                 do_global = T,
+                                 slab_precision = slab_precision);
+store_hierarchical_scales$Standard = 
+  store_hierarchical_scales$NAB = 
+  store_hierarchical_scales$SAB = 
+  foo$scale1;
+prior_eff$Standard = 
+  prior_eff$NAB = 
+  prior_eff$SAB = 
+  foo$prior_num1;
+rm(foo);
+#
+store_hierarchical_scales$NAB_aug_tilde = nab_augmented_scale;
+
+## MC Params ====##########################################################################
+mc_warmup = 2e3;
+mc_iter_after_warmup = 1e3;
+only_prior = 0;
+mc_chains = 2;
+mc_thin = 1;
+mc_stepsize = 0.1;
+mc_adapt_delta_relaxed = 0.99;
+mc_adapt_delta_strict = 0.9999;
+mc_max_treedepth = 19;
+ntries_per_iter = 2;
+
+## Compile STAN ====##########################################################################
+standard_stan_filename = "RegHS_Stable.stan";
+sab_stan_filename = "SAB_Stable.stan";
+sab_dev_stan_filename = NULL;
+nab_stan_filename = "NAB_Stable.stan";
+nab_dev_stan_filename = NULL;
+regstudt_stan_filename = "RegStudT.stan";
+
+if(!stan_compiled) {
+  begin_compile = Sys.time();
+  
+  assign("Standard_template",glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename)));
+  assign("NAB_template",glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename)));
+  if(!is.null(nab_dev_stan_filename) && (!"NAB_Dev" %in% skip_methods)) {
+    assign("NAB_Dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
+  }
+  assign("SAB_template",glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename)));
+  if(!is.null(sab_dev_stan_filename) && (!"SAB_Dev" %in% skip_methods)) {
+    assign("SAB_Dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
+  }
+  end_compile = Sys.time();  
+  stan_compiled = T;
+} 
+
+## Historical ====##########################################################################
+#Historical analysis only
+curr_method = "Historical";
+y = y_hist;
+x_standardized = x_hist_orig;
+beta_orig_scale = store_hierarchical_scales[[curr_method]];
+beta_aug_scale = store_hierarchical_scales[[curr_method]];
+
+foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
+                   stan_fit = Standard_template,
+                   y = y,
+                   x_standardized = x_standardized, 
+                   p = p,
+                   q = 0,
+                   beta_orig_scale = beta_orig_scale, 
+                   beta_aug_scale = beta_aug_scale, 
+                   local_dof = local_dof, 
+                   global_dof = global_dof, 
+                   slab_precision = slab_precision,
+                   intercept_offset = NULL,
+                   only_prior = only_prior, 
+                   mc_warmup = mc_warmup, 
+                   mc_iter_after_warmup = mc_iter_after_warmup, 
+                   mc_chains = mc_chains, 
+                   mc_thin = mc_thin, 
+                   mc_stepsize = mc_stepsize, 
+                   mc_adapt_delta = mc_adapt_delta_relaxed,
+                   mc_max_treedepth = mc_max_treedepth,
+                   ntries = ntries_per_iter);
+
+##Keep copy of values;
+assign(paste0("beta0_",curr_method),foo$hist_beta0);
+assign(paste0("beta_",curr_method),foo$curr_beta);
+#See what else is stored
+names(foo);
+#Garbage cleanup
+rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale);
+
+## Standard ====##########################################################################
+#Standard analysis of current data, ignoring historical model
+curr_method = "Standard";
+y = y_curr;
+x_standardized = cbind(x_curr_orig,x_curr_aug);
+beta_orig_scale = store_hierarchical_scales[[curr_method]];
+beta_aug_scale = store_hierarchical_scales[[curr_method]];
+
+foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
+                   stan_fit = Standard_template,
+                   y = y,
+                   x_standardized = x_standardized, 
+                   p = p,
+                   q = q,
+                   beta_orig_scale = beta_orig_scale, 
+                   beta_aug_scale = beta_aug_scale, 
+                   local_dof = local_dof, 
+                   global_dof = global_dof, 
+                   slab_precision = slab_precision,
+                   intercept_offset = NULL,
+                   only_prior = only_prior, 
+                   mc_warmup = mc_warmup, 
+                   mc_iter_after_warmup = mc_iter_after_warmup, 
+                   mc_chains = mc_chains, 
+                   mc_thin = mc_thin, 
+                   mc_stepsize = mc_stepsize, 
+                   mc_adapt_delta = mc_adapt_delta_relaxed,
+                   mc_max_treedepth = mc_max_treedepth,
+                   ntries = ntries_per_iter);
+
+##Keep copy of values;
+assign(paste0("beta0_",curr_method),foo$hist_beta0);
+assign(paste0("beta_",curr_method),foo$curr_beta);
+#See what else is stored
+names(foo);
+#Garbage cleanup
+rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale);
+
+## NAB ====##########################################################################
+#Naive Adaptive Bayes: apply Historical analysis directly as a prior on beta_orig. 
+
+curr_base_method = "NAB";
+y = y_curr;
+x_standardized = cbind(x_curr_orig,x_curr_aug);
+beta_orig_scale = store_hierarchical_scales[[curr_base_method]];
+beta_aug_scale = store_hierarchical_scales[[curr_base_method]];
+beta_aug_scale_tilde = store_hierarchical_scales[[paste0(curr_base_method,"_aug_tilde")]];
+
+###
+#These will all be needed for SAB also
+alpha_prior_mean = colMeans(beta_Historical);
+alpha_prior_cov = var(beta_Historical);
+scale_to_variance225 = diag(alpha_prior_cov) / 225;
+eigendecomp_hist_var = eigen(alpha_prior_cov);
+###
+
+prior_type = names(phi_params)[1];
+
+for(prior_type in names(phi_params)) {
+  
+  curr_method = paste0(curr_base_method,prior_type);
+  phi_mean = eval(phi_params[[prior_type]][["mean"]]);
+  phi_sd = eval(phi_params[[prior_type]][["sd"]]);
+  
+  foo = glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename),
+                stan_fit = NAB_template,
+                y = y,
+                x_standardized = x_standardized, 
+                alpha_prior_mean = alpha_prior_mean,
+                alpha_prior_cov = alpha_prior_cov,
+                phi_mean = phi_mean,
+                phi_sd = phi_sd,
+                beta_orig_scale = beta_orig_scale, 
+                beta_aug_scale = beta_aug_scale, 
+                beta_aug_scale_tilde = beta_aug_scale_tilde,
+                local_dof = local_dof, 
+                global_dof = global_dof, 
+                slab_precision = slab_precision,
+                only_prior = only_prior, 
+                mc_warmup = mc_warmup, 
+                mc_iter_after_warmup = mc_iter_after_warmup, 
+                mc_chains = mc_chains, 
+                mc_thin = mc_thin, 
+                mc_stepsize = mc_stepsize, 
+                mc_adapt_delta = mc_adapt_delta_strict,
+                mc_max_treedepth = mc_max_treedepth,
+                ntries = ntries_per_iter,
+                eigendecomp_hist_var = eigendecomp_hist_var,
+                scale_to_variance225 = scale_to_variance225);
+  
+  ##Keep copy of values;
+  assign(paste0("beta0_",curr_method),foo$hist_beta0);
+  assign(paste0("beta_",curr_method),foo$curr_beta);
+  assign(paste0("phi_",curr_method),foo$phi);
+  #See what else is stored
+  names(foo);
+  
+}
+
+rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale, beta_aug_scale_tilde, prior_type);
+
+## SAB ====##########################################################################
+#Sensible Adaptive Bayes: apply Historical analysis as a prior on beta_orig + projection%*%beta_aug 
+curr_base_method = "SAB";
+y = y_curr;
+x_standardized = cbind(x_curr_orig,x_curr_aug);
+beta_orig_scale = store_hierarchical_scales[[curr_base_method]];
+beta_aug_scale = store_hierarchical_scales[[curr_base_method]];
+
+aug_projection = create_projection(x_curr_orig = x_curr_orig,
+                                   x_curr_aug = x_curr_aug,
+                                   eigenvec_hist_var = t(eigendecomp_hist_var$vectors),
+                                   imputes_list = sab_imputes_list);
+
+prior_type = names(phi_params)[1];
+
+for(prior_type in names(phi_params)) {
+  
+  curr_method = paste0(curr_base_method,prior_type);
+  phi_mean = eval(phi_params[[prior_type]][["mean"]]);
+  phi_sd = eval(phi_params[[prior_type]][["sd"]]);
+  
+  foo = glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename),
+                stan_fit = SAB_template,
+                y = y, 
+                x_standardized = x_standardized, 
+                alpha_prior_mean = alpha_prior_mean,
+                alpha_prior_cov = alpha_prior_cov,
+                aug_projection = aug_projection[[1]],
+                phi_mean = phi_mean,
+                phi_sd = phi_sd,
+                beta_orig_scale = beta_orig_scale, 
+                beta_aug_scale = beta_aug_scale, 
+                local_dof = local_dof, 
+                global_dof = global_dof, 
+                slab_precision = slab_precision, 
+                only_prior = only_prior, 
+                mc_warmup = mc_warmup, 
+                mc_iter_after_warmup = mc_iter_after_warmup, 
+                mc_chains = mc_chains, 
+                mc_thin = mc_thin, 
+                mc_stepsize = mc_stepsize, 
+                mc_adapt_delta = mc_adapt_delta_strict,
+                mc_max_treedepth = mc_max_treedepth,
+                ntries = ntries_per_iter,
+                eigendecomp_hist_var = eigendecomp_hist_var,
+                scale_to_variance225 = scale_to_variance225);
+  
+  
+  ##Keep copy of values;
+  assign(paste0("beta0_",curr_method),foo$hist_beta0);
+  assign(paste0("beta_",curr_method),foo$curr_beta);
+  assign(paste0("phi_",curr_method),foo$phi);
+  #See what else is stored
+  names(foo);
+}
+
+rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale, prior_type);
+rm(aug_projection, alpha_prior_mean, alpha_prior_cov, scale_to_variance225, eigendecomp_hist_var);
+
+
+## Results ====##########################################################################
+
+#Mean
+round(colMeans(beta_Standard),3);
+round(colMeans(beta_NABAgnostic),3);
+round(colMeans(beta_SABAgnostic),3);
+c(true_betas_orig,true_betas_aug);
+#Standard deviation
+round(apply(beta_Standard,2,sd),3);
+round(apply(beta_NABAgnostic,2,sd),3);
+round(apply(beta_SABAgnostic,2,sd),3);
+#RMSE
+matrix_true_beta = matrix(c(true_betas_orig,true_betas_aug),
+                          nrow = mc_iter_after_warmup * mc_chains,
+                          ncol = p + q,
+                          byrow = T);
+sqrt(mean(rowSums((beta_Standard - matrix_true_beta)^2)));
+sqrt(mean(rowSums((beta_NABAgnostic - matrix_true_beta)^2)));
+sqrt(mean(rowSums((beta_SABAgnostic - matrix_true_beta)^2)));
