@@ -21,12 +21,14 @@ if(!"phi_params"%in%ls()){
 }
 
 
-if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "RegHS_Stable.stan";}
-if(!"sab_stan_filename"%in%ls()){sab_stan_filename = "SAB_Stable.stan";}
-if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = "SAB_Dev.stan";}
-if(!"nab_stan_filename"%in%ls()){nab_stan_filename = "NAB_Stable.stan";}
-if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = "NAB_Dev.stan";}
+if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "RegHS_stable.stan";}
+if(!"sab_stan_filename"%in%ls()){sab_stan_filename = "SAB_stable.stan";}
+if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = "SAB_dev.stan";}
+if(!"nab_stan_filename"%in%ls()){nab_stan_filename = "NAB_stable.stan";}
+if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = "NAB_dev.stan";}
 if(!"skip_methods"%in%ls()){skip_methods = c("Benchmark");}
+if(!"sab_small_imputes"%in%ls()){sab_small_imputes = 50;}
+if(!"sab_large_imputes"%in%ls()){sab_large_imputes = 200;}
 
 if(!"n_list"%in%ls()){
   n_list = list(n_hist = c(100,100,400,400,1600,1600),#n_hist
@@ -119,7 +121,7 @@ for(i in 1:nrow(all_varying)) {
   true_betas_orig = betas_list$true_betas_orig[[all_varying[i,"betas"]]];
   true_betas_aug = betas_list$true_betas_aug[[all_varying[i,"betas"]]];
   #
-  sab_imputes_list = list(c(1,ifelse(length(c(true_betas_orig,true_betas_aug)) > 25, 50, 200)));
+  sab_imputes_list = list(c(1,ifelse(length(c(true_betas_orig,true_betas_aug)) > 25, sab_small_imputes, sab_large_imputes)));
   #
   #curr_n_sim = ifelse(length(c(true_betas_orig,true_betas_aug)) <= 25, n_sim, pmax(1,n_sim/2));
   curr_n_sim = n_sim;

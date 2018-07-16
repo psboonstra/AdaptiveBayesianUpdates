@@ -1,3 +1,4 @@
+// Regularized Student-t
 data {
   int<lower = 0> n_stan; // num obs
   int<lower = 0> p_stan; // number of covariates

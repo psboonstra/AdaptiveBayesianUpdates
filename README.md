@@ -13,27 +13,27 @@ The functions <samp>glm_nab</samp> and <samp>glm_sab</samp> contained in the fil
 In more detail, there are eleven files included in this repository (in addition to this README): one text file (ending in <samp>.txt</samp>), four <samp>R</samp> scripts (ending in  <samp>.R</samp>), and six STAN functions (ending in  <samp>.stan</samp>). The simulation studies reported in Boonstra and Barbaro were run using commit 5; however, all subsequent commits have not changed any methodology and should therefore yield the same results, subject to simulation error. This has not been thoroughly checked. 
 
 ### Text file
-<samp>runABUSims.txt</samp> is the script for running the simulation study on a cluster using SLURM. The following script does this:
+<samp>runABUSims.txt</samp> is the script for submitting parallel runs of <samp>runABUSims.R</samp> (described below) to a cluster that is running SLURM. The following command does this:
 
 <code> sbatch runABUSims.txt </code>
 
 ### <samp>R</samp> files
-<samp>runMe.R</samp> should be used to conduct a large-scale simulation study. On a local machine, the user may choose a specific scenario (as described in that script) and run the code locally on his/her machine. On a cluster running SLURM, the user can use this script to submit multiple jobs simultaneously. 
+<samp>runABUSims.R</samp> is the script to conduct the large-scale simulation study described in the manuscript. On a local machine, the user may choose a specific <samp>array_id</samp> (as described in this script's documentation) and run the code locally on his/her machine. On a cluster running SLURM, the user can use this script to submit multiple jobs simultaneously (as described above). 
 
-<samp>Functions.R</samp> provides all of the necessary functions to fit the methods described in the paper as well as to run the simulation study. 
+<samp>Functions.R</samp> provides all of the necessary functions to fit the methods described in the paper. 
 
-<samp>GenParams.R</samp> constructs inputs for running the simulation study. As described in the descriptions of this script and <samp>runMe.R</samp>, these inputs can be overwritten by the user.
+<samp>GenParams.R</samp> constructs inputs for running the simulation study. As described in the script's documentation and the documentation in <samp>runABUSims.R</samp>, these inputs can be overwritten by the user.
 
-<samp>Example.R</samp> creates a single simulated dataset and demonstrates how to fit the methods described in the manuscript. 
+<samp>Example.R</samp> creates a single simulated dataset and walks through how to fit the methods described in the manuscript. 
 
 ### STAN files
-The STAN files are described below. Note that these currently all implement a logistic link, but changing to a non-logistic link (i.e. log, probit, etc.) will be relatively easy. Upon using these for the first time, <samp>R</samp> will need to compile these programs, creating an R data object (ending in <samp>.rds</samp>) in the current working directory. Recompilation of the STAN files are not necessary as long as they stay the same.
+The STAN files are described below. Note that these currently all implement a logistic link, but changing to a non-logistic link (i.e. log, probit, etc.) will be relatively easy. Upon using these for the first time, <samp>R</samp> will need to compile these programs, creating an R data object (ending in <samp>.rds</samp>) in the current working directory. Re-compilation of the STAN files are not necessary as long as they stay the same.
 
-<samp>RegHS_Stable.stan</samp> implements the regularized horseshoe prior, as described in Boonstra and Barbaro, applied to a logistic regression. An <samp>R</samp> user calls this with <samp>glm_standard</samp> in <samp>Functions.R</samp>. 
+<samp>RegHS_stable.stan</samp> implements the regularized horseshoe prior, using the settings described described in Boonstra and Barbaro, applied to a logistic regression. An <samp>R</samp> user calls this with <samp>glm_standard</samp> in <samp>Functions.R</samp>. 
 
-<samp>NAB_Stable.stan</samp>, <samp>NAB_Dev.stan</samp> both implement the 'naive adaptive Bayesian' prior, as described in Boonstra and Barbaro, applied to a logistic regression. The '<samp>_Dev</samp>' modifier was initially used for testing development versions of the prior against the current stable version. For the results reported in Boonstra and Barbaro, the only difference between the two is in the hyperprior distribution on &eta; (eta): in the former it is distributed as Inv-Gamma(2.5, 2.5), and in the latter it is Inv-Gamma(25, 25). The 'stable' versions are reported in the main manuscript. An <samp>R</samp> user calls this with the function <samp>glm_nab</samp> in <samp>Functions.R</samp>. 
+<samp>NAB_stable.stan</samp>, <samp>NAB_dev.stan</samp> both implement the 'naive adaptive Bayesian' prior, as described in Boonstra and Barbaro, applied to a logistic regression. The '<samp>_dev</samp>' modifier was initially used for testing development versions of the prior against the current stable version. For the results reported in Boonstra and Barbaro, the only difference between the two is in the hyperprior distribution on &eta; (eta): in the former it is distributed as Inv-Gamma(2.5, 2.5), and in the latter it is Inv-Gamma(25, 25). The 'stable' versions are reported in the main manuscript. An <samp>R</samp> user calls this with the function <samp>glm_nab</samp> in <samp>Functions.R</samp>. 
 
-<samp>SAB_Stable.stan</samp>, <samp>SAB_Dev.stan</samp> are analogous versions of the 'sensible adaptive Bayesian' prior. An <samp>R</samp> user calls this with the function <samp>glm_sab</samp> in <samp>Functions.R</samp>. 
+<samp>SAB_stable.stan</samp>, <samp>SAB_dev.stan</samp> are analogous versions of the 'sensible adaptive Bayesian' prior. An <samp>R</samp> user calls this with the function <samp>glm_sab</samp> in <samp>Functions.R</samp>. 
 
 <samp>RegStudT.stan</samp> implements a regularized Student-t prior applied to a logistic regression. This is not considered in the simulation study but is used in the exemplar data analysis ('PedRESC2'). A Student-t prior is applied to each regression coefficient using a normal-inverse-gamma distribution, but the latent inverse-gamma scale has a smooth upperbound provided by the user, so as to constrain very large scale values. An <samp>R</samp> user calls this with <samp>glm_studt</samp> in <samp>Functions.R</samp>. 
 

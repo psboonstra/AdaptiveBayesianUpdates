@@ -1,11 +1,11 @@
 #DESCRIPTION: Example to demonstrate the R functions. 
 
 #This script expects that the following files are in your current working directory:
-#RegHS_Stable.stan, 
-#SAB_Stable.stan, 
-#SAB_Dev.stan, 
-#NAB_Stable.stan,
-#NAB_Dev.stan,
+#RegHS_stable.stan, 
+#SAB_stable.stan, 
+#SAB_dev.stan, 
+#NAB_stable.stan,
+#NAB_dev.stan,
 #Functions.R
 #You can point to a different directory for the stan files by changing the object 'stan_file_path'. 
 
@@ -33,7 +33,7 @@ stan_compiled = F;
 #Choose your own values
 set.seed(1);
 n_hist = 500;
-n_curr = 200;
+n_curr = 100;
 n_new = 1e3;
 true_mu_hist = 0;
 true_mu_curr = -2.5;#Note the difference in baseline prevalence
@@ -152,10 +152,10 @@ mc_max_treedepth = 19;
 ntries_per_iter = 2;
 
 ## Compile STAN ====##########################################################################
-standard_stan_filename = "RegHS_Stable.stan";
-sab_stan_filename = "SAB_Stable.stan";
+standard_stan_filename = "RegHS_stable.stan";
+sab_stan_filename = "SAB_stable.stan";
 sab_dev_stan_filename = NULL;
-nab_stan_filename = "NAB_Stable.stan";
+nab_stan_filename = "NAB_stable.stan";
 nab_dev_stan_filename = NULL;
 regstudt_stan_filename = "RegStudT.stan";
 
@@ -164,12 +164,12 @@ if(!stan_compiled) {
   
   assign("Standard_template",glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename)));
   assign("NAB_template",glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename)));
-  if(!is.null(nab_dev_stan_filename) && (!"NAB_Dev" %in% skip_methods)) {
-    assign("NAB_Dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
+  if(!is.null(nab_dev_stan_filename)) {
+    assign("NAB_dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
   }
   assign("SAB_template",glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename)));
-  if(!is.null(sab_dev_stan_filename) && (!"SAB_Dev" %in% skip_methods)) {
-    assign("SAB_Dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
+  if(!is.null(sab_dev_stan_filename)) {
+    assign("SAB_dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
   }
   end_compile = Sys.time();  
   stan_compiled = T;
@@ -379,12 +379,16 @@ rm(aug_projection, alpha_prior_mean, alpha_prior_cov, scale_to_variance225, eige
 #Mean
 round(colMeans(beta_Standard),3);
 round(colMeans(beta_NABAgnostic),3);
+round(colMeans(beta_NABOptimist),3);
 round(colMeans(beta_SABAgnostic),3);
+round(colMeans(beta_SABOptimist),3);
 c(true_betas_orig,true_betas_aug);
 #Standard deviation
 round(apply(beta_Standard,2,sd),3);
 round(apply(beta_NABAgnostic,2,sd),3);
+round(apply(beta_NABOptimist,2,sd),3);
 round(apply(beta_SABAgnostic,2,sd),3);
+round(apply(beta_SABOptimist,2,sd),3);
 #RMSE
 matrix_true_beta = matrix(c(true_betas_orig,true_betas_aug),
                           nrow = mc_iter_after_warmup * mc_chains,
@@ -392,4 +396,6 @@ matrix_true_beta = matrix(c(true_betas_orig,true_betas_aug),
                           byrow = T);
 sqrt(mean(rowSums((beta_Standard - matrix_true_beta)^2)));
 sqrt(mean(rowSums((beta_NABAgnostic - matrix_true_beta)^2)));
+sqrt(mean(rowSums((beta_NABOptimist - matrix_true_beta)^2)));
 sqrt(mean(rowSums((beta_SABAgnostic - matrix_true_beta)^2)));
+sqrt(mean(rowSums((beta_SABOptimist - matrix_true_beta)^2)));

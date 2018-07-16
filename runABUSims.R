@@ -4,11 +4,11 @@
 #scenario. Finally, the result is saved as an binary data file (an R workspace) called paste0("Sim",array_id_offset + array_id,".RData"). 
 
 #This script expects that the following files are in your current working directory:
-#RegHS_Stable.stan, 
-#SAB_Stable.stan, 
-#SAB_Dev.stan, 
-#NAB_Stable.stan,
-#NAB_Dev.stan,
+#RegHS_stable.stan, 
+#SAB_stable.stan, 
+#SAB_dev.stan, 
+#NAB_stable.stan,
+#NAB_dev.stan,
 #GenParams.R
 #Functions.R
 #You can point to a different directory for the stan files by changing the object 'stan_file_path'. 

@@ -674,6 +674,9 @@ create_projection = function(x_curr_orig,
 #characteristics of the underlying HMC chain. A number of operating characteristics are returned, based both on estimation and prediction. 
 #
 #
+#VALUE: A list of various results. 
+#
+#
 #ARGUMENTS:
 #sim_number (arbitrary) This is a label to help the user keep track of multiple different scenario settings
 #It is simply returned at the end of the function
@@ -801,11 +804,11 @@ run.sim <- function(sim_number,
                     power_prop_nonzero_prior = 1/3,
                     sab_imputes_list = list(c(1,100)),
                     stan_file_path = "",
-                    standard_stan_filename = "RegHS_Stable.stan",
-                    sab_stan_filename = "SAB_Stable.stan",
-                    sab_dev_stan_filename = "SAB_Dev.stan",
-                    nab_stan_filename = "NAB_Stable.stan",
-                    nab_dev_stan_filename = "NAB_Dev.stan",
+                    standard_stan_filename = "RegHS_stable.stan",
+                    sab_stan_filename = "SAB_stable.stan",
+                    sab_dev_stan_filename = "SAB_dev.stan",
+                    nab_stan_filename = "NAB_stable.stan",
+                    nab_dev_stan_filename = "NAB_dev.stan",
                     phi_params = list("Agnostic" = c(mean = 0.5, sd = 2.5),
                                       "Optimist" = c(mean = 1, sd = 0.25)),
                     mc_warmup = 1e3,
@@ -835,10 +838,7 @@ run.sim <- function(sim_number,
   if(min_sab_index != 1) {
     stop("The argument 'sab_imputes_list' requires that the smallest index overall be 1");
   }
-  #if(max(max(sab_num_imputes_each),max_sab_index) > 3000/length(c(true_betas_orig,true_betas_aug))) {  
-  #  stop("some values in 'sab_imputes_list' exceed 3000/(p+q); decrease below this threshold for computational expediency");
-  #}
-  
+
   base_meth_names = c("Benchmark",
                       "Historical",
                       "Standard",
@@ -947,15 +947,12 @@ run.sim <- function(sim_number,
                                      npar1 = num_orig + num_aug, 
                                      npar2 = 0,
                                      local_dof = local_dof, 
-                                     regional_dof = global_dof, 
+                                     regional_dof = -Inf, 
                                      global_dof = global_dof,
+                                     slab_precision = slab_precision,
                                      n = n_hist + n_curr,
                                      sigma = 2, 
-                                     n_sim = round(2e6/(num_orig + num_aug)),
-                                     do_local = T,
-                                     do_regional = F,
-                                     do_global = T,
-                                     slab_precision = slab_precision);
+                                     n_sim = round(2e6/(num_orig + num_aug)));
     store_hierarchical_scales$Benchmark = foo$scale1;
     prior_eff$Benchmark = foo$prior_num1;
     rm(foo);
@@ -966,15 +963,12 @@ run.sim <- function(sim_number,
                                      npar1 = num_orig, 
                                      npar2 = 0,
                                      local_dof = local_dof, 
-                                     regional_dof = global_dof, 
+                                     regional_dof = -Inf, 
                                      global_dof = global_dof,
+                                     slab_precision = slab_precision,
                                      n = n_hist,
                                      sigma = 2, 
-                                     n_sim = round(2e6/(num_orig + num_aug)),
-                                     do_local = T,
-                                     do_regional = F,
-                                     do_global = T,
-                                     slab_precision = slab_precision);
+                                     n_sim = round(2e6/(num_orig + num_aug)));
     store_hierarchical_scales$Historical = foo$scale1;
     prior_eff$Historical = foo$prior_num1;
     rm(foo);
@@ -986,15 +980,12 @@ run.sim <- function(sim_number,
                                      npar1 = num_orig + num_aug, 
                                      npar2 = 0,
                                      local_dof = local_dof, 
-                                     regional_dof = global_dof, 
+                                     regional_dof = -Inf, 
                                      global_dof = global_dof,
+                                     slab_precision = slab_precision,
                                      n = n_curr,
                                      sigma = 2, 
-                                     n_sim = round(2e6/(num_orig + num_aug)),
-                                     do_local = T,
-                                     do_regional = F,
-                                     do_global = T,
-                                     slab_precision = slab_precision);
+                                     n_sim = round(2e6/(num_orig + num_aug)));
     store_hierarchical_scales$Standard = 
       store_hierarchical_scales$NAB = 
       store_hierarchical_scales$SAB = 
@@ -1090,12 +1081,12 @@ run.sim <- function(sim_number,
         
         assign("Standard_template",glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename)));
         assign("NAB_template",glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename)));
-        if(!is.null(nab_dev_stan_filename) && (!"NAB_Dev" %in% skip_methods)) {
-          assign("NAB_Dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
+        if(!is.null(nab_dev_stan_filename) && (!"NAB_dev" %in% skip_methods)) {
+          assign("NAB_dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
         }
         assign("SAB_template",glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename)));
-        if(!is.null(sab_dev_stan_filename) && (!"SAB_Dev" %in% skip_methods)) {
-          assign("SAB_Dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
+        if(!is.null(sab_dev_stan_filename) && (!"SAB_dev" %in% skip_methods)) {
+          assign("SAB_dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
         }
         end_compile = Sys.time();  
         stan_compiled = T;
@@ -1822,27 +1813,60 @@ run.sim <- function(sim_number,
        informational_messages = informational_messages);
 }
 
+#DESCRIPTION: This function calculates a numerical-based solution to the scale parameter c in the the equation three lines 
+#from the top of page 7 in Section 2 of Boonstra and Barbaro. If desired, the user may request regional scale values
+#for a partition of the covariates into two regions, defined by the first npar1 covariates and the second npar2 covariates.
+#This functionality was not used in Boonstra and Barbaro. 
+#
+#
+#ARGUMENTS:
+#target_mean1, target_mean2 (pos. reals): the desired prior number of effective parameters (tilde xi_eff in Boonstra and Barbaro). 
+#If one scale parameter is desired, leave target_mean2 = NA. An error will be thrown if target_mean1 > npar1 or if 
+#target_mean2 > npar2. 
+#
+#npar1, npar2 (pos. integers): the number of covariates. If one scale parameter is required, then leave npar2 = 0. 
+#
+#local_dof, global_dof (pos. integer) numbers indicating the degrees of freedom for lambda_j and tau, respectively. Boonstra
+#and Barbaro never considered local_dof != 1 or global_dof != 1. 
+#
+#regional_dof (pos. integer) Not used in Boonstra and Barbaro. If 
+#
+#n (pos. integer) sample size 
+#
+#sigma (pos. real) square root of the assumed dispersion. In Boonstra and Barbaro, this was always 2, corresponding to the
+#maximum possible value: sqrt(1/[0.5 * (1 - 0.5)]). 
+#
+#tol (pos. real) numerical tolerance for convergence of solution
+#
+#max_iter (pos. integer) maximum number of iterations to run without convergence before giving up
+#
+#n_sim (pos. integer) number of simulated draws from the underlying student-t hyperpriors to calculate the Monte Carlo-based
+#approximation of the expectation. 
+#
+#slab_precision (pos. real) the slab-part of the regularized horseshoe, this is equivalent to (1/d)^2 in the notation of
+#Boonstra and Barbaro 
+
 
 solve_for_hiershrink_scale = function(target_mean1,
                                       target_mean2 = NA,
                                       npar1,
                                       npar2 = 0,
                                       local_dof = 1,
-                                      regional_dof = 1,
+                                      regional_dof = -Inf,
                                       global_dof = 1,
+                                      slab_precision = (1/15)^2,
                                       n,
                                       sigma = 2,
                                       tol = .Machine$double.eps^0.5,
                                       max_iter = 100, 
-                                      n_sim = 2e5,
-                                      do_local = T,
-                                      do_regional = F,
-                                      do_global = T,
-                                      slab_precision = (1/15)^2#this is 1/d^2 of the regularized horseshooe
+                                      n_sim = 2e5
 ) {
   
   npar = npar1 + npar2;
   stopifnot(isTRUE(all.equal(npar%%1,0)));#Ensure integers
+  do_local = (local_dof > 0);
+  do_regional = (regional_dof > 0);
+  do_global = (global_dof > 0);
   if(do_local) {
     lambda = matrix(rt(n_sim * npar,df = local_dof), nrow = n_sim);
   } else {
@@ -1935,27 +1959,35 @@ solve_for_hiershrink_scale = function(target_mean1,
               prior_num2 = prior_num2));
 }
 
+#DESCRIPTION: This function is the inverse of 'solve_for_hiershrink_scale'. Instead of providing a desired effective number of 
+#parameters, the user provides the scale value(s), which is c in the notation of Boonstra and Barbaro, and the the function gives
+#the implied prior number of effective parameters based upon this. As with 'solve_for_hiershrink_scale', the user can provide
+#one global scale parameter (scale1, leaving scale2 = NA) that applies to all parameters, or two regional scale parameters (scale1, 
+#scale2), that applies to a partition of the parameters as defined by the first npar1 parameters and the second npar2 parameters.
+#
+#
+#ARGUMENTS:
+#target_mean1, target_mean2 (pos. reals): the desired prior number of effective parameters (tilde xi_eff in Boonstra and Barbaro). 
+#If one scale parameter is desired, leave target_mean2 = NA. An error will be thrown if target_mean1 > npar1 or if 
+#target_mean2 > npar2. 
 
-
-#calculate m_eff (approximate prior number of covariates) from regularized horseshoe
 calculate_m_eff = function(scale1,
                            scale2 = NA,
                            npar1,
                            npar2 = 0,
                            local_dof = 1,
-                           regional_dof = 1,
+                           regional_dof = -Inf,
                            global_dof = 1,
+                           slab_precision = (1/15)^2,
                            n,
                            sigma = 2,
                            tol = .Machine$double.eps^0.5,
                            max_iter = 100, 
-                           n_sim = 2e5,
-                           do_local = T,
-                           do_regional = F,
-                           do_global = T,
-                           slab_precision = (1/15)^2#this is 1/d^2 of the regularized horseshooe
+                           n_sim = 2e5
 ) {
-  
+  do_local = (local_dof > 0);
+  do_regional =(regional_dof > 0);
+  do_global = (global_dof > 0);
   npar = npar1 + npar2;
   stopifnot(isTRUE(all.equal(npar%%1,0)));#Ensure integers
   if(do_local) {

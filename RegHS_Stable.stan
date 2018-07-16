@@ -1,4 +1,4 @@
-// Regularized Horseshoe Prior
+// Regularized Horseshoe Prior (stable version)
 data {
   int<lower = 1> n_stan; // n_curr
   int<lower = 1> p_stan; // number of original covariates
