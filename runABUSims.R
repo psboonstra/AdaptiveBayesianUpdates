@@ -1,7 +1,7 @@
-#DESCRIPTION: Running this script without modification produces an object called 'arglist', which is a list of 120 lists, with each of the 120 lists 
-#corresponding to a unique scenario, defined as a combination from 6 sample sizes, 10 sets of true regression coefficients, and 2 distributions of 
-#predictors. Then, one of these lists is extracted based upon the value of array_id, and the simulator function called run.sim is called on this 
-#scenario. Finally, the result is saved as an binary data file (an R workspace) called paste0("Sim",array_id_offset + array_id,".RData"). 
+#DESCRIPTION: Running this script without modification produces an object called 'arglist', which is a list of 60 lists, with each of the 60 lists 
+#corresponding to a unique scenario, defined as a combination from  sample sizes and 10 sets of true regression coefficients. Then, one of these 
+#lists is extracted based upon the value of array_id, and the simulator function called run.sim is called on this scenario. Finally, the result 
+#is saved as an binary data file (an R workspace) called paste0("Sim",array_id_offset + array_id,".RData"). 
 
 #This script expects that the following files are in your current working directory:
 #RegHS_stable.stan, 
@@ -20,13 +20,12 @@ library(tidyr);library(plyr);library(dplyr);require(magrittr);
 #Flag for whether this is running on a local machine or on a cluster running SLURM
 my_computer = F;
 
-#The simulation study in Boonstra and Barbaro was conducted in two batches of 960 jobs followed by 480 (because the cluster only accepts jobs in 
-#batches of size up to 1000). 'which_run' indicates whether this is the first batch (= 1 ) or the second batch ( = 2)
+#The simulation study in Boonstra and Barbaro was conducted in two batches of 960 jobs followed by another 960 (because the cluster only accepts 
+#jobs in batches of size up to 1000). 'which_run' indicates whether this is the first batch (= 1 ) or the second batch ( = 2)
 which_run = 1;
 
 if(my_computer) {
-  #Choose from between 1-960 if which_run = 1 and GenParams.R is used as-is
-  #Choose from between 1-480 if which_run = 2 and GenParams.R is used as-is
+  #Choose from between 1-960 if GenParams.R is used as-is
   array_id = 1;
 } else {
   array_id = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'));
@@ -41,18 +40,18 @@ stan_file_path = "";
 
 if(which_run == 1) {#first batch
   #'jobs_per_scenario' is the number of parallel independent jobs to send for each scenario, and 'n_sim' is the number of independent datasets per job
-  #to generate, e.g. in Boonstra and Barbaro, initially 8 jobs per scenario times 7 simulated datasets per job = 56 simulated datasets per scenario 
-  #were run. Then, an additional 4 jobs times 11 simulated datasets per job = 44 simulated datasets per scenario were run, yielding a total 
+  #to generate. In Boonstra and Barbaro, initially 16 jobs per scenario times 2 simulated datasets per job = 32 simulated datasets per scenario 
+  #were run. Then, an additional 16 jobs times 6 simulated datasets per job = 96 simulated datasets per scenario were run, yielding a total 
   #of 100 simulated datasets per scenario presented in the results. 
-  jobs_per_scenario = 8;
-  n_sim = 7;
+  jobs_per_scenario = 16;
+  n_sim = 2;#Worst case running time needed is ~22 hours
   #'array_id_offset' is added to the label of the saved object. Useful when a new batch of jobs is run and you want to continue the labeling scheme. 
-  #In Boonstra and Barbaro, 960 jobs were initially submitted (120 scenarios times 8 jobs per scenario), followed by 480 subsequent jobs (120 scenarios
-  #times 4 jobs per scenario). Thus, for the second batch, array_id_offset was set to be 960, so that the first job from the second batch would be labeled 961. 
+  #In Boonstra and Barbaro, 960 jobs were initially submitted (60 scenarios times 16 jobs per scenario), followed by 960 subsequent jobs (60 scenarios
+  #times 16 jobs per scenario). Thus, for the second batch, array_id_offset was set to be 960, so that the first job from the second batch would be labeled 961. 
   array_id_offset = 0;
 } else {#second batch
-  jobs_per_scenario = 4;
-  n_sim = 11;
+  jobs_per_scenario = 16;
+  n_sim = 6;#Worst case running time needed is ~66 hours
   array_id_offset = 960;  
 }
 #Should the sim_id labels be randomly permuted across array_ids? Helpful if you're impatient and intending on looking at intermediate results along the 

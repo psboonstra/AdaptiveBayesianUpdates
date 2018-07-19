@@ -559,9 +559,11 @@ glm_sab = function(stan_fit = NA,
   }
 }
 
-#DESCRIPTION: Helper function to make projection matrix (or matrices), which is P in the notation 
+#DESCRIPTION: Helper function to make projection matrix (or list of projection matrices), which is P in the notation 
 #of Boonstra and Barbaro
 #
+#VALUE: A list as long as the the length of imputes_list, with each element containing a different projection matrix 
+#using the indices of the imputations specified in the corresponding element of imputes_list.
 #
 #ARGUMENTS:
 #
@@ -574,7 +576,7 @@ glm_sab = function(stan_fit = NA,
 #
 #imputes_list (list) list of length-2 vectors, with each vector containing the lower and upper indices of the imputations to use 
 #for a projection matrix in the SAB method. This is best explained with an example: if imputes_list = list(c(1,15),c(16,100),c(1,100)), 
-#then three projection matrices will be constructed. One will be based upon the first 15 imputations from a run of MICE, the second based upon
+#then three projection matrices will be returned. One will be based upon the first 15 imputations from a run of MICE, the second based upon
 #the last 85 imputations from that same run (i.e. the 16th-100th imputations), and the third will be based upon all 100 imputations from this
 #same run. This is coded as such to allow for flexible exploration of the impact of number of imputations or variability due to imputations. 
 #

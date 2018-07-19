@@ -19,7 +19,10 @@ if(!"phi_params"%in%ls()){
                     "Optimist" = c(mean = 1, sd = 0.25)
   );
 }
-
+if(!"sab_imputes_list"%in%ls()){
+  sab_imputes_list = list(c(1,50),
+                          c(1,1));
+}
 
 if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "RegHS_stable.stan";}
 if(!"sab_stan_filename"%in%ls()){sab_stan_filename = "SAB_stable.stan";}
@@ -27,8 +30,6 @@ if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = "SAB_dev.stan";}
 if(!"nab_stan_filename"%in%ls()){nab_stan_filename = "NAB_stable.stan";}
 if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = "NAB_dev.stan";}
 if(!"skip_methods"%in%ls()){skip_methods = c("Benchmark");}
-if(!"sab_small_imputes"%in%ls()){sab_small_imputes = 50;}
-if(!"sab_large_imputes"%in%ls()){sab_large_imputes = 200;}
 
 if(!"n_list"%in%ls()){
   n_list = list(n_hist = c(100,100,400,400,1600,1600),#n_hist
@@ -99,13 +100,12 @@ stopifnot(length(betas_list$true_betas_orig)==length(betas_list$true_betas_aug))
 
 if(!"covariate_args_list"%in%ls()) {
   covariate_args_list = list(
-    list(x_correlation = 0.20, x_orig_binom = NA, x_aug_binom = NA),
     list(x_correlation = 0.20, x_orig_binom = "first_half", x_aug_binom = "first_half")
   )
 }
 
 if(!"n_sim"%in%ls()) {
-  n_sim = 7;
+  n_sim = 2;
 }
 
 all_varying = expand.grid(covariates = 1:length(covariate_args_list),n = 1:length(n_list[[1]]), betas = 1:length(betas_list[[1]]));
@@ -121,11 +121,7 @@ for(i in 1:nrow(all_varying)) {
   true_betas_orig = betas_list$true_betas_orig[[all_varying[i,"betas"]]];
   true_betas_aug = betas_list$true_betas_aug[[all_varying[i,"betas"]]];
   #
-  sab_imputes_list = list(c(1,ifelse(length(c(true_betas_orig,true_betas_aug)) > 25, sab_small_imputes, sab_large_imputes)));
-  #
-  #curr_n_sim = ifelse(length(c(true_betas_orig,true_betas_aug)) <= 25, n_sim, pmax(1,n_sim/2));
-  curr_n_sim = n_sim;
-  #
+  
   covariate_args = covariate_args_list[[all_varying[i,"covariates"]]];
   if(covariate_args$x_orig_binom == "first_half") {
     covariate_args$x_orig_binom = 1:ceiling(length(true_betas_orig)/2);
@@ -145,7 +141,7 @@ for(i in 1:nrow(all_varying)) {
   assign(paste("sim",array_id + array_id_offset,"_params",sep=""),
          list(sim_number = all_varying[i,"scenario"],
               array_id = array_id,
-              n_sim = curr_n_sim,
+              n_sim = n_sim,
               n_hist = n_hist,
               n_curr = n_curr,
               n_new = 1e3,
