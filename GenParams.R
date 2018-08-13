@@ -20,7 +20,7 @@ if(!"phi_params"%in%ls()){
   );
 }
 if(!"sab_imputes_list"%in%ls()){
-  sab_imputes_list = list(c(1,50),
+  sab_imputes_list = list(c(1,100),
                           c(1,1));
 }
 
@@ -111,7 +111,7 @@ if(!"n_sim"%in%ls()) {
 all_varying = expand.grid(covariates = 1:length(covariate_args_list),n = 1:length(n_list[[1]]), betas = 1:length(betas_list[[1]]));
 all_varying = cbind(all_varying, scenario = array_id_offset + (1:nrow(all_varying)));
 
-random_seeds = sample(2^30.999,nrow(all_varying));
+random_seeds = sample(.Machine$integer.max - 1e4,nrow(all_varying));
 
 arglist = list();
 for(i in 1:nrow(all_varying)) {

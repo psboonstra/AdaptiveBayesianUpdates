@@ -10,7 +10,7 @@ The functions <samp>glm_nab</samp> and <samp>glm_sab</samp> contained in the fil
 
 ## Further details
 
-In more detail, there are twelve files included in this repository (in addition to this README): one text file (ending in <samp>.txt</samp>), five <samp>R</samp> scripts (ending in  <samp>.R</samp>), and six STAN functions (ending in <samp>.stan</samp>). The simulation studies reported in Boonstra and Barbaro were run using commit 21.
+In more detail, there are twelve files included in this repository (in addition to this README): one text file (ending in <samp>.txt</samp>), five <samp>R</samp> scripts (ending in  <samp>.R</samp>), and six STAN functions (ending in <samp>.stan</samp>). The simulation studies reported in Boonstra and Barbaro were run using commit 22.
 
 ### Text file
 <samp>runABUSims.txt</samp> is the script for submitting parallel runs of <samp>runABUSims.R</samp> (described below) to a cluster that is running SLURM. The following command does this:

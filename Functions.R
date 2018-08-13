@@ -631,27 +631,25 @@ create_projection = function(x_curr_orig,
   dat_for_marg = lapply(1:length(imputes_list), function(x) dat_for_marg);
   
   #Now impute the augmented covariates based upon the artificially created original covariates, i.e. the eigenvectors, using
-  #the empiric associations in current data. keep_seq are the indices of the observations that are actually imputed, when 
-  #all of the imputed datasets are stacked on top of each other, i.e. 'long' format
-  keep_seq = seq(from = nrow(x_all)+1, 
-                 to = n_imputes * (nrow(x_all)+1), 
-                 length = n_imputes);
+  #the empiric associations in current data. 
+  curr_impute = mice(rbind(x_all,
+                           #original covariates are constant across the different imputations, so we can just use the first
+                           dat_for_marg[[1]][,c(orig_covariates,aug_covariates)]),
+                     printFlag = F,
+                     predictorMatrix = predictorMatrix,#user-provided, or if missing, created above
+                     m = n_imputes,#
+                     maxit = 1,#only one iteration is needed, due to the monotone missingness pattern
+                     method = "pmm", 
+                     seed = seed_start);
+  curr_impute = data.matrix(mice::complete(curr_impute,"long"));
   for(k in 1:(p+1)) {
-    set.seed(seed_start + k);
-    curr_impute = mice(rbind(x_all,
-                             #original covariates are constant across the different imputations, so we can just use the first
-                             dat_for_marg[[1]][k,c(orig_covariates,aug_covariates)]),
-                       printFlag = F,
-                       predictorMatrix = predictorMatrix,#user-provided, or if missing, created above
-                       m = n_imputes,#
-                       maxit = 1,#only one iteration is needed, due to the monotone missingness pattern
-                       method = "pmm");
     for(j in 1:length(imputes_list)) {
       #Fill in the data_for marg
       dat_for_marg[[j]][dat_for_marg[[j]][,"ID"] == dat_for_marg[[j]][k,"ID"], aug_covariates] = 
-        colMeans(data.matrix(mice::complete(curr_impute,"long")[keep_seq[imputes_list[[j]][1]:imputes_list[[j]][2]],aug_covariates]));
+        colMeans(curr_impute[which(curr_impute[,".id"] == k + nrow(x_all))[imputes_list[[j]][1]:imputes_list[[j]][2]],aug_covariates,drop=F]);
     }
   }
+  
   #If there is any perfect correlation between predictors, the imputer will return NA. In this case, we fill in the missing data
   #with whatever variable was perfectly correlated with it
   for(j in 1:length(imputes_list)) {
@@ -1000,7 +998,7 @@ run.sim <- function(sim_number,
     #
     store_hierarchical_scales$NAB_aug_tilde = nab_augmented_scale;
   }
-  #This creates a predictor matrix to pass to MICE
+  #This creates a predictor matrix to pass to MICE for creating the projection matrix
   #The assumption is of a monotone missingness pattern (x^o is fully observed, x^a is not)
   #Thus it samples fromm [X^a_{1...q}|X^o] = [X^a_1|X^o]*[X^a_2|X^o,X^a_1]*...
   predictorMatrix11 = matrix(0,nrow = num_orig,ncol = num_orig);
@@ -1738,7 +1736,7 @@ run.sim <- function(sim_number,
       } 
       #
       rm(matrix_risk_new);     
-      if(i%%2 == 0) {cat(array_id,"-",i," proj. run time:",round(proj_run_time <- difftime(end_compile,begin_compile,units="hours") + (n_sim * (difftime(Sys.time(),begin_sim,units="hours") - difftime(end_compile,begin_compile,units="hours"))/i),2),"hours. proj. end time: ",format.Date(begin_sim  + proj_run_time),"\n\n",file="tracktime.txt",append=T)}
+      cat(array_id,"-",i," proj. run time:",round(proj_run_time <- difftime(end_compile,begin_compile,units="hours") + (n_sim * (difftime(Sys.time(),begin_sim,units="hours") - difftime(end_compile,begin_compile,units="hours"))/i),2),"hours. proj. end time: ",format.Date(begin_sim  + proj_run_time),"\n\n",file="tracktime.txt",append=T);
     }
   }
   ## Summarize results ====##########################################################################

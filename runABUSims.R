@@ -44,14 +44,14 @@ if(which_run == 1) {#first batch
   #were run. Then, an additional 16 jobs times 6 simulated datasets per job = 96 simulated datasets per scenario were run, yielding a total 
   #of 100 simulated datasets per scenario presented in the results. 
   jobs_per_scenario = 16;
-  n_sim = 2;#Worst case running time needed is ~22 hours
+  n_sim = 2;#Worst case running time needed is ~23 hours
   #'array_id_offset' is added to the label of the saved object. Useful when a new batch of jobs is run and you want to continue the labeling scheme. 
   #In Boonstra and Barbaro, 960 jobs were initially submitted (60 scenarios times 16 jobs per scenario), followed by 960 subsequent jobs (60 scenarios
   #times 16 jobs per scenario). Thus, for the second batch, array_id_offset was set to be 960, so that the first job from the second batch would be labeled 961. 
   array_id_offset = 0;
 } else {#second batch
   jobs_per_scenario = 16;
-  n_sim = 6;#Worst case running time needed is ~66 hours
+  n_sim = 6;#Worst case running time needed is ~75 hours
   array_id_offset = 960;  
 }
 #Should the sim_id labels be randomly permuted across array_ids? Helpful if you're impatient and intending on looking at intermediate results along the 
@@ -74,7 +74,7 @@ if(permute_array_ids) {
 }
 
 curr_args = arglist[[ceiling(permute_array_ids[array_id]/jobs_per_scenario)]];
-curr_args[["random_seed"]] = curr_args[["random_seed"]] + array_id;
+curr_args[["random_seed"]] = curr_args[["random_seed"]] + array_id_offset + array_id;
 
 assign(paste0("sim",array_id_offset + array_id),do.call("run.sim",args = curr_args));
 do.call("save",list(paste0("sim",array_id_offset + array_id),file=paste0("Sim",array_id_offset + array_id,".RData")));

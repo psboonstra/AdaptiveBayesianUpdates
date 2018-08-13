@@ -50,10 +50,10 @@ meth_names_toprint =  c(
   "NAB_devOptimist" = "NAB_opt_eta2",
   "SAB.phiAgnostic.imp1" = "SAB_agn",
   "SAB.phiOptimist.imp1" = "SAB_opt",
-  "SAB_dev.phiAgnostic.imp1" = "SAB_agn_eta2",
-  "SAB_dev.phiOptimist.imp1" = "SAB_opt_eta2",
   "SAB.phiAgnostic.imp2" = "SAB_agn_1imp",
   "SAB.phiOptimist.imp2" = "SAB_opt_1imp",
+  "SAB_dev.phiAgnostic.imp1" = "SAB_agn_eta2",
+  "SAB_dev.phiOptimist.imp1" = "SAB_opt_eta2",
   "SAB_dev.phiAgnostic.imp2" = "SAB_agn_eta2_1imp",
   "SAB_dev.phiOptimist.imp2" = "SAB_opt_eta2_1imp"
 );
@@ -296,7 +296,7 @@ figureS1_results$variable = factor(figureS1_results$variable,
                                      "NAB(optimist)/Standard"));
 #
 
-ggplot(filter(figureS1_results,beta_label < 6, x_orig_binom == F),
+ggplot(filter(figureS1_results,beta_label < 6, x_orig_binom == T),
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -308,11 +308,11 @@ ggplot(filter(figureS1_results,beta_label < 6, x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
-                     breaks = 2^seq(-3, 1, by = 0.5),
-                     minor_breaks = 2^seq(-3, 1, by = 0.25),
+                     breaks = 2^seq(-4, 1, by = 0.5),
+                     minor_breaks = 2^seq(-4, 1, by = 0.25),
                      labels = function(x) {formatC(x,digits=2,format="f");}) + 
   labs(x = expression(n[hist]), 
        y = "RMSE Ratio (Original)",
@@ -327,7 +327,7 @@ ggplot(filter(figureS1_results,beta_label < 6, x_orig_binom == F),
         legend.text.align = 0);
 ggsave(paste0(write_path,"/figS1a.eps"),height = 5., width = 9);
 #
-ggplot(filter(figureS1_results,beta_label %in% c(6:10), x_orig_binom == F),
+ggplot(filter(figureS1_results,beta_label %in% c(6:10), x_orig_binom == T),
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -339,11 +339,11 @@ ggplot(filter(figureS1_results,beta_label %in% c(6:10), x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
-                     breaks = 2^seq(-4,0,by=1), 
-                     minor_breaks = 2^seq(-4, 0.5, by = 0.5),
+                     breaks = 2^seq(-5,0,by=1), 
+                     minor_breaks = 2^seq(-5, 0.5, by = 0.5),
                      labels = function(x) {formatC(x,digits=2,format="f");}) + 
   labs(x = expression(n[hist]), 
        y = "RMSE Ratio (Original)",
@@ -378,7 +378,7 @@ figureS2_results$variable = factor(figureS2_results$variable,
                                      "NAB(optimist)/Standard"));
 #
 
-ggplot(filter(figureS2_results,beta_label < 6, x_orig_binom == F),
+ggplot(filter(figureS2_results,beta_label < 6, x_orig_binom == T),
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -390,11 +390,11 @@ ggplot(filter(figureS2_results,beta_label < 6, x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
-                     breaks = 2^seq(-1.5, 1, by = 0.5),
-                     minor_breaks = 2^seq(-1.5, 1, by = 0.25),
+                     breaks = 2^seq(-3, 1, by = 0.5),
+                     minor_breaks = 2^seq(-3, 1, by = 0.25),
                      labels = function(x) {formatC(x,digits=2,format="f");}) + 
   labs(x = expression(n[hist]), 
        y = "RMSE Ratio (Added)",
@@ -409,7 +409,7 @@ ggplot(filter(figureS2_results,beta_label < 6, x_orig_binom == F),
         legend.text.align = 0);
 ggsave(paste0(write_path,"/figS2a.eps"),height = 5., width = 9);
 #
-ggplot(filter(figureS2_results,beta_label %in% c(6:10), x_orig_binom == F),
+ggplot(filter(figureS2_results,beta_label %in% c(6:10), x_orig_binom == T),
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -421,7 +421,7 @@ ggplot(filter(figureS2_results,beta_label %in% c(6:10), x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
                      breaks = 2^seq(-4,0,by=1), 
@@ -460,7 +460,7 @@ figureS3_results$variable = factor(figureS3_results$variable,
                                      "NAB(optimist)"));
 #
 
-ggplot(filter(figureS3_results,beta_label < 6, x_orig_binom == F), 
+ggplot(filter(figureS3_results,beta_label < 6, x_orig_binom == T), 
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -472,7 +472,7 @@ ggplot(filter(figureS3_results,beta_label < 6, x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
                      breaks = 2^seq(-0.5, 0.5, by = 0.5/4),
@@ -491,7 +491,7 @@ ggplot(filter(figureS3_results,beta_label < 6, x_orig_binom == F),
         legend.text.align = 0);
 ggsave(paste0(write_path,"/figS3a.eps"),height = 5., width = 9);
 #
-ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == F), 
+ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
            y = sqrt(value))) + 
   geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
@@ -503,7 +503,7 @@ ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == F),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
                      breaks = 2^seq(-0.75, 0.75, by = 0.5/3),
@@ -524,10 +524,10 @@ ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == F),
 ggsave(paste0(write_path,"/figS3b.eps"),height = 4.75, width = 9);
 
 
-summary(filter(figureS3_results,beta_label < 6, x_orig_binom == F, variable %in% c("NAB(agnostic)"))[,"value"])
-summary(filter(figureS3_results,beta_label < 6, x_orig_binom == F, variable %in% c("SAB(agnostic)"))[,"value"])
-summary(filter(figureS3_results,beta_label >= 6, x_orig_binom == F, variable %in% c("NAB(agnostic)"))[,"value"])
-summary(filter(figureS3_results,beta_label >= 6, x_orig_binom == F, variable %in% c("SAB(agnostic)"))[,"value"])
+summary(filter(figureS3_results,beta_label < 6, x_orig_binom == T, variable %in% c("NAB(agnostic)"))[,"value"])
+summary(filter(figureS3_results,beta_label < 6, x_orig_binom == T, variable %in% c("SAB(agnostic)"))[,"value"])
+summary(filter(figureS3_results,beta_label >= 6, x_orig_binom == T, variable %in% c("NAB(agnostic)"))[,"value"])
+summary(filter(figureS3_results,beta_label >= 6, x_orig_binom == T, variable %in% c("SAB(agnostic)"))[,"value"])
 ######################################################
 
 ######################################################
@@ -611,10 +611,163 @@ write.table(table_vals,file=file_name,row.names=F,col.names=F,sep="&",na="",quot
 
 
 ######################################################
+figureA1_results = 
+  individual_results %>%
+  filter(Metric == "mse_beta") %>%
+  dplyr::select("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing",
+                "SAB_agn_over_Standard",
+                "SAB_agn_1imp_over_Standard") %>% 
+  reshape2::melt(id.vars=c("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing"))
+figureA1_results$variable = factor(figureA1_results$variable,
+                                   labels = c(
+                                     "SAB(agn)/Standard",
+                                     "SAB1Imp(agn)/Standard"));
+#
+ggplot(filter(figureA1_results,beta_label < 6, x_orig_binom == T), 
+       aes(x = factor(n_hist), 
+           y = sqrt(value))) + 
+  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
+  geom_boxplot(aes(group = interaction(n_hist,variable),
+                   color = factor(variable),
+                   fill = factor(variable)),
+               position = position_dodge(width =  0.85), 
+               alpha = 1,
+               outlier.size = 0.5,
+               size = 0.2) + 
+  facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
+  #scale_fill_grey() + 
+  scale_color_grey(start = 0, end = 0) +  
+  scale_y_continuous(trans = "log2",
+                     breaks = 2^seq(-3, 1, by = 0.5),
+                     minor_breaks = 2^seq(-3, 1, by = 0.25),
+                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
+  labs(x = expression(n[hist]), 
+       y = "RMSE Ratio",
+       fill = "",
+       color = "") + 
+  theme(axis.text = element_text(colour = 'black', angle = 0, size = 12, hjust = 0.5, vjust = 0.5),
+        axis.title= element_text(size=12),
+        strip.text = element_text(size = 12),
+        legend.title = element_text(size=12),
+        legend.text = element_text(size=12),
+        legend.position = "top",
+        legend.text.align = 0);
+ggsave(paste0(write_path,"/figA1a.eps"),height = 5., width = 9);
+#
+ggplot(filter(figureA1_results,beta_label %in% c(6:10), x_orig_binom == T), 
+       aes(x = factor(n_hist), 
+           y = sqrt(value))) + 
+  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
+  geom_boxplot(aes(group = interaction(n_hist,variable),
+                   color = factor(variable),
+                   fill = factor(variable)),
+               position = position_dodge(width =  0.85), 
+               alpha = 1,
+               outlier.size = 0.5,
+               size = 0.2) + 
+  facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
+  #scale_fill_grey() + 
+  scale_color_grey(start = 0, end = 0) +  
+  scale_y_continuous(trans = "log2",
+                     breaks = 2^seq(-4,0,by=1), 
+                     minor_breaks = 2^seq(-4, 0.5, by = 0.5),
+                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
+  labs(x = expression(n[hist]), 
+       y = "RMSE Ratio",
+       fill = "",
+       color = "") +
+  guides(color = F, fill = F) + 
+  theme(axis.text = element_text(colour = 'black', angle = 0, size = 12, hjust = 0.5, vjust = 0.5),
+        axis.title= element_text(size=12),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size=12),
+        legend.text = element_text(size=12),
+        legend.position = "top",
+        legend.text.align = 0);
+ggsave(paste0(write_path,"/figA1b.eps"),height = 4.75, width = 9);
+
+######################################################
+figureA2_results = 
+  individual_results %>%
+  filter(Metric == "phi") %>%
+  dplyr::select("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing",
+                "SAB_agn",
+                "SAB_agn_1imp") %>% 
+  reshape2::melt(id.vars=c("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing"))
+figureA2_results$variable = factor(figureA2_results$variable,
+                                   labels = c(
+                                     "SAB(agn)",
+                                     "SAB1Imp(agn)"));
+
+ggplot(filter(figureA2_results,beta_label < 6, x_orig_binom == T), 
+       aes(x = factor(n_hist), 
+           y = sqrt(value))) + 
+  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
+  geom_boxplot(aes(group = interaction(n_hist,variable),
+                   color = factor(variable),
+                   fill = factor(variable)),
+               position = position_dodge(width =  0.85), 
+               alpha = 1,
+               outlier.size = 0.5,
+               size = 0.2) + 
+  facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
+  scale_fill_grey() + 
+  scale_color_grey(start = 0, end = 0) +  
+  scale_y_continuous(trans = "log2",
+                     breaks = 2^seq(-8, 8, by = 2),
+                     minor_breaks = 2^seq(-8, 8, by = 1),
+                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
+  labs(x = expression(n[hist]), 
+       y = "RMSE Ratio",
+       fill = "",
+       color = "") + 
+  theme(axis.text = element_text(colour = 'black', angle = 0, size = 12, hjust = 0.5, vjust = 0.5),
+        axis.title= element_text(size=12),
+        strip.text = element_text(size = 12),
+        legend.title = element_text(size=12),
+        legend.text = element_text(size=12),
+        legend.position = "top",
+        legend.text.align = 0);
+ggsave(paste0(write_path,"/figA2a.eps"),height = 5., width = 9);
+#
+ggplot(filter(figureA2_results,beta_label %in% c(6:10), x_orig_binom == T), 
+       aes(x = factor(n_hist), 
+           y = sqrt(value))) + 
+  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
+  geom_boxplot(aes(group = interaction(n_hist,variable),
+                   color = factor(variable),
+                   fill = factor(variable)),
+               position = position_dodge(width =  0.85), 
+               alpha = 1,
+               outlier.size = 0.5,
+               size = 0.2) + 
+  facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
+  scale_fill_grey() + 
+  scale_color_grey(start = 0, end = 0) +  
+  scale_y_continuous(trans = "log2",
+                     breaks = 2^seq(-8, 8, by = 2),
+                     minor_breaks = 2^seq(-8, 8, by = 1),
+                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
+  labs(x = expression(n[hist]), 
+       y = "RMSE Ratio",
+       fill = "",
+       color = "") +
+  guides(color = F, fill = F) + 
+  theme(axis.text = element_text(colour = 'black', angle = 0, size = 12, hjust = 0.5, vjust = 0.5),
+        axis.title= element_text(size=12),
+        strip.text = element_text(size = 10),
+        legend.title = element_text(size=12),
+        legend.text = element_text(size=12),
+        legend.position = "top",
+        legend.text.align = 0);
+ggsave(paste0(write_path,"/figA2b.eps"),height = 4.75, width = 9);
+
+
+######################################################
 #WNAR plots
 wnar_results = filter(figure1_results,
                       beta_label %in% c(1,5,6,7,8,10), 
-                      x_orig_binom == F,
+                      x_orig_binom == T,
                       n_curr == 200, 
                       variable %in% c("SAB(agnostic)/Standard", "NAB(agnostic)/Standard"));
 wnar_results$wnar_variable = factor(as.character(wnar_results$variable),labels = c("Naive/Standard","Sensible/Standard"));
