@@ -828,7 +828,7 @@ run.sim <- function(sim_number,
   
   begin_all = Sys.time();
   set.seed(random_seed);
-  data_seeds = sample(2^30.999,n_sim);
+  data_seeds = sample(.Machine$integer.max,n_sim);
   informational_messages = list();
   
   stopifnot(class(sab_imputes_list) == "list");
@@ -858,7 +858,7 @@ run.sim <- function(sim_number,
   rm(sab_suffix);
   
   if("Historical" %in% skip_methods) {
-    skip_methods = intersect(skip_methods, c("NAB","NAB_dev","SAB","SAB_dev"));
+    skip_methods = union(skip_methods, c("NAB","NAB_dev","SAB","SAB_dev"));
     informational_messages = c(informational_messages, paste0("Skipping all adaptive Bayesian methods because because Historical was skipped"));
   }
   if(("NAB" %in% skip_methods && !"NAB_dev" %in% skip_methods) || ("SAB" %in% skip_methods && !"SAB_dev" %in% skip_methods)) {

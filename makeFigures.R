@@ -213,7 +213,7 @@ ggplot(filter(figure1_results,beta_label < 6, x_orig_binom == T),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
                      breaks = 2^seq(-3, 1, by = 0.5),
@@ -230,7 +230,8 @@ ggplot(filter(figure1_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/fig1a.eps"),height = 5., width = 9);
+#ggsave(paste0(write_path,"/fig1a.eps"),height = 5., width = 9);
+ggsave(paste0(write_path,"/fig1aCOLOR.eps"),height = 5., width = 9);
 #
 ggplot(filter(figure1_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
@@ -244,7 +245,7 @@ ggplot(filter(figure1_results,beta_label %in% c(6:10), x_orig_binom == T),
                outlier.size = 0.5,
                size = 0.2) + 
   facet_grid(pretty_n_curr_label~pretty_beta_label, labeller = label_parsed) +
-  scale_fill_grey() + 
+  #scale_fill_grey() + 
   scale_color_grey(start = 0, end = 0) +  
   scale_y_continuous(trans = "log2",
                      breaks = 2^seq(-4,0,by=1), 
@@ -262,7 +263,8 @@ ggplot(filter(figure1_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/fig1b.eps"),height = 4.75, width = 9);
+#ggsave(paste0(write_path,"/fig1b.eps"),height = 4.75, width = 9);
+ggsave(paste0(write_path,"/fig1bCOLOR.eps"),height = 4.75, width = 9);
 
 
 summary(filter(figure1_results,beta_label <= 5, n_hist == 100, n_curr == 100, x_orig_binom == T, variable %in% c("SAB(agnostic)/Standard"))[,"value"]);
