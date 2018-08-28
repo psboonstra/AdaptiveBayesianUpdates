@@ -4,7 +4,10 @@
 
 Boonstra, Philip S. and Barbaro, Ryan P., "Incorporating Historical Models with Adaptive Bayesian Updates" (2018) In Press at *Biostatistics*
 
+<a href="https://biostats.bepress.com/umichbiostat/paper124">Authors' Copy </a>
+
 DOI for this repository:
+
 [![DOI](https://zenodo.org/badge/140338593.svg)](https://zenodo.org/badge/latestdoi/140338593)
 
 
