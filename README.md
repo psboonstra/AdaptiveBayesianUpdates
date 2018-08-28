@@ -2,8 +2,12 @@
 
 ### Current Suggested Citation
 
-Boonstra, Philip S. and Barbaro, Ryan P., "Incorporating Historical Models with Adaptive Bayesian Updates" (March 2018). The University of Michigan Department of Biostatistics Working Paper Series. Working Paper 124.
-https://biostats.bepress.com/umichbiostat/paper124
+Boonstra, Philip S. and Barbaro, Ryan P., "Incorporating Historical Models with Adaptive Bayesian Updates" (2018) In Press at *Biostatistics*
+
+DOI for this repository:
+[![DOI](https://zenodo.org/badge/140338593.svg)](https://zenodo.org/badge/latestdoi/140338593)
+
+
 
 ## Executive Summary
 The functions <samp>glm_nab</samp> and <samp>glm_sab</samp> contained in the file <samp>Functions.R</samp> represent the primary statistical contribution from this manuscript. With these functions, plus the mean and variance of the coefficients from a historical regression model and the usual ingredients for fitting the current model of interest, a user can fit a Bayesian logistic regression with the adaptive priors that are described in the manuscript.
