@@ -24,12 +24,11 @@ if(!"sab_imputes_list"%in%ls()){
                           c(1,1));
 }
 
-if(!"standard_stan_filename"%in%ls()){standard_stan_filename = "RegHS_stable.stan";}
-if(!"sab_stan_filename"%in%ls()){sab_stan_filename = "SAB_stable.stan";}
-if(!"sab_dev_stan_filename"%in%ls()){sab_dev_stan_filename = "SAB_dev.stan";}
-if(!"nab_stan_filename"%in%ls()){nab_stan_filename = "NAB_stable.stan";}
-if(!"nab_dev_stan_filename"%in%ls()){nab_dev_stan_filename = "NAB_dev.stan";}
-if(!"skip_methods"%in%ls()){skip_methods = c("Benchmark");}
+if(!"standard_stan_template"%in%ls()){standard_stan_template = stanmodels$RegHS_Stable;}
+if(!"sab_stan_template"%in%ls()){sab_stan_template = stanmodels$SAB_Stable;}
+if(!"sab_dev_stan_template"%in%ls()){sab_dev_stan_template = stanmodels$SAB_Dev;}
+if(!"nab_stan_template"%in%ls()){nab_stan_template = stanmodels$NAB_Stable;}
+if(!"nab_dev_stan_template"%in%ls()){nab_dev_stan_template = stanmodels$NAB_Dev;}
 
 if(!"n_list"%in%ls()){
   n_list = list(n_hist = c(100,100,400,400,1600,1600),#n_hist
@@ -158,12 +157,11 @@ for(i in 1:nrow(all_varying)) {
               nab_augmented_scale = nab_augmented_scale,
               power_prop_nonzero_prior = power_prop_nonzero_prior,
               sab_imputes_list = sab_imputes_list,
-              stan_file_path = stan_file_path,
-              standard_stan_filename = standard_stan_filename,
-              sab_stan_filename = sab_stan_filename,
-              sab_dev_stan_filename = sab_dev_stan_filename,
-              nab_stan_filename = nab_stan_filename,
-              nab_dev_stan_filename = nab_dev_stan_filename,
+              standard_stan_template = standard_stan_template,
+              sab_stan_template = sab_stan_template,
+              sab_dev_stan_template = sab_dev_stan_template,
+              nab_stan_template = nab_stan_template,
+              nab_dev_stan_template = nab_dev_stan_template,
               phi_params = phi_params,
               mc_warmup = mc_warmup, 
               mc_iter_after_warmup = mc_iter_after_warmup, 

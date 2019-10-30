@@ -1,22 +1,23 @@
-#DESCRIPTION: Running this script without modification produces an object called 'arglist', which is a list of 60 lists, with each of the 60 lists 
-#corresponding to a unique scenario, defined as a combination from  sample sizes and 10 sets of true regression coefficients. Then, one of these 
-#lists is extracted based upon the value of array_id, and the simulator function called run.sim is called on this scenario. Finally, the result 
-#is saved as an binary data file (an R workspace) called paste0("Sim",array_id_offset + array_id,".RData"). 
+# DESCRIPTION: Running this script without modification produces an object 
+# called 'arglist', which is a list of 60 lists, with each of the 60 lists 
+# corresponding to a unique scenario, defined as a combination from  sample 
+# sizes and 10 sets of true regression coefficients. Then, one of these 
+# lists is extracted based upon the value of array_id, and the simulator 
+# function called simulator is called on this scenario. Finally, the result 
+# is saved as an binary data file (an R workspace) 
+# called paste0("Sim",array_id_offset + array_id,".RData"). 
 
-#This script expects that the following files are in your current working directory:
-#RegHS_stable.stan, 
-#SAB_stable.stan, 
-#SAB_dev.stan, 
-#NAB_stable.stan,
-#NAB_dev.stan,
-#GenParams.R
-#Functions.R
-#You can point to a different directory for the stan files by changing the object 'stan_file_path'. 
 
-rm(list=ls(all=TRUE));
+if(!require(adaptBayes)) {
+  library(devtools)
+  # may take some time:
+  install_github('umich-biostatistics/adaptBayes') 
+} 
+
 library(mice);library(Hmisc);library(MASS);
 library(rstan);library(Matrix);library(mnormt);
-library(tidyr);library(plyr);library(dplyr);require(magrittr);
+library(tidyverse);
+
 #Flag for whether this is running on a local machine or on a cluster running SLURM
 my_computer = F;
 
@@ -35,8 +36,6 @@ if(my_computer) {
 rstan_options(auto_write = TRUE);
 options(mc.cores = parallel::detectCores());
 
-#If the files ending in .stan are elsewhere, indicate as such with this 
-stan_file_path = "";
 
 if(which_run == 1) {#first batch
   #'jobs_per_scenario' is the number of parallel independent jobs to send for each scenario, and 'n_sim' is the number of independent datasets per job
@@ -61,9 +60,8 @@ permute_array_ids = T;
 
 #Before calling the next line, the user should specify any parameters that she/he wishes to change from their default values. Any specified values will
 #overwrite their default values, which are set by sourcing GenParams.R. 
-source("GenParams.R");
-rm(list=setdiff(ls(all=T),c("arglist","array_id","my_computer","permute_array_ids","jobs_per_scenario","array_id_offset")));
-source("Functions.R");
+source("generate_params.R");
+source("functions_simulation.R");
 
 #This is the step that permutes the job ids. If FALSE, then all jobs from the same scenario will occur in contiguous blocks. 
 if(permute_array_ids) {
@@ -76,5 +74,5 @@ if(permute_array_ids) {
 curr_args = arglist[[ceiling(permute_array_ids[array_id]/jobs_per_scenario)]];
 curr_args[["random_seed"]] = curr_args[["random_seed"]] + array_id_offset + array_id;
 
-assign(paste0("sim",array_id_offset + array_id),do.call("run.sim",args = curr_args));
+assign(paste0("sim",array_id_offset + array_id),do.call("simulator",args = curr_args));
 do.call("save",list(paste0("sim",array_id_offset + array_id),file=paste0("Sim",array_id_offset + array_id,".RData")));

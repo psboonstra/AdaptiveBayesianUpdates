@@ -1,33 +1,19 @@
 #DESCRIPTION: Example to demonstrate the R functions. 
 
-#This script expects that the following files are in your current working directory:
-#RegHS_stable.stan, 
-#SAB_stable.stan, 
-#SAB_dev.stan, 
-#NAB_stable.stan,
-#NAB_dev.stan,
-#Functions.R
-#You can point to a different directory for the stan files by changing the object 'stan_file_path'. 
+if(!require(adaptBayes)) {
+  library(devtools)
+  # may take some time:
+  install_github('umich-biostatistics/adaptBayes') 
+} 
 
-rm(list=ls(all=TRUE));
 library(mice);library(Hmisc);library(MASS);
 library(rstan);library(Matrix);library(mnormt);
-library(tidyr);library(plyr);library(dplyr);require(magrittr);
-phils_computer = T;
-if(phils_computer) {
-  read_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/revisionSims/";
-  write_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/";
-} else {
-  read_path = 
-    write_path = "";
-}
+library(tidyverse);
 
 options(mc.cores = parallel::detectCores());
 rstan_options(auto_write = TRUE);
 
-stan_file_path = "";
-source("Functions.R");
-stan_compiled = F;
+source("functions_simulation.R");
 
 ## Draw Data ====##########################################################################
 #Choose your own values
@@ -145,29 +131,6 @@ mc_adapt_delta_strict = 0.9999;
 mc_max_treedepth = 19;
 ntries_per_iter = 2;
 
-## Compile STAN ====##########################################################################
-standard_stan_filename = "RegHS_stable.stan";
-sab_stan_filename = "SAB_stable.stan";
-sab_dev_stan_filename = NULL;
-nab_stan_filename = "NAB_stable.stan";
-nab_dev_stan_filename = NULL;
-regstudt_stan_filename = "RegStudT.stan";
-
-if(!stan_compiled) {
-  begin_compile = Sys.time();
-  
-  assign("Standard_template",glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename)));
-  assign("NAB_template",glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename)));
-  if(!is.null(nab_dev_stan_filename)) {
-    assign("NAB_dev_template",glm_nab(stan_path = paste0(stan_file_path,nab_dev_stan_filename)));
-  }
-  assign("SAB_template",glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename)));
-  if(!is.null(sab_dev_stan_filename)) {
-    assign("SAB_dev_template",glm_sab(stan_path = paste0(stan_file_path,sab_dev_stan_filename)));
-  }
-  end_compile = Sys.time();  
-  stan_compiled = T;
-} 
 
 ## Historical ====##########################################################################
 #Historical analysis only
@@ -177,9 +140,7 @@ x_standardized = x_hist_orig;
 beta_orig_scale = store_hierarchical_scales[[curr_method]];
 beta_aug_scale = store_hierarchical_scales[[curr_method]];
 
-foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                   stan_fit = Standard_template,
-                   y = y,
+foo = glm_standard(y = y,
                    x_standardized = x_standardized, 
                    p = p,
                    q = 0,
@@ -199,11 +160,13 @@ foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename),
                    mc_max_treedepth = mc_max_treedepth,
                    ntries = ntries_per_iter);
 
-##Keep copy of values;
+##Keep copy of values; 
 assign(paste0("beta0_",curr_method),foo$hist_beta0);
 assign(paste0("beta_",curr_method),foo$curr_beta);
+
 #See what else is stored
 names(foo);
+
 #Garbage cleanup
 rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale);
 
@@ -215,9 +178,7 @@ x_standardized = cbind(x_curr_orig,x_curr_aug);
 beta_orig_scale = store_hierarchical_scales[[curr_method]];
 beta_aug_scale = store_hierarchical_scales[[curr_method]];
 
-foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename), 
-                   stan_fit = Standard_template,
-                   y = y,
+foo = glm_standard(y = y,
                    x_standardized = x_standardized, 
                    p = p,
                    q = q,
@@ -240,8 +201,10 @@ foo = glm_standard(stan_path = paste0(stan_file_path,standard_stan_filename),
 ##Keep copy of values;
 assign(paste0("beta0_",curr_method),foo$hist_beta0);
 assign(paste0("beta_",curr_method),foo$curr_beta);
+
 #See what else is stored
 names(foo);
+
 #Garbage cleanup
 rm(foo, curr_method, y, x_standardized, beta_orig_scale, beta_aug_scale);
 
@@ -271,9 +234,7 @@ for(prior_type in names(phi_params)) {
   phi_mean = eval(phi_params[[prior_type]][["mean"]]);
   phi_sd = eval(phi_params[[prior_type]][["sd"]]);
   
-  foo = glm_nab(stan_path = paste0(stan_file_path,nab_stan_filename),
-                stan_fit = NAB_template,
-                y = y,
+  foo = glm_nab(y = y,
                 x_standardized = x_standardized, 
                 alpha_prior_mean = alpha_prior_mean,
                 alpha_prior_cov = alpha_prior_cov,
@@ -329,9 +290,7 @@ for(prior_type in names(phi_params)) {
   phi_mean = eval(phi_params[[prior_type]][["mean"]]);
   phi_sd = eval(phi_params[[prior_type]][["sd"]]);
   
-  foo = glm_sab(stan_path = paste0(stan_file_path,sab_stan_filename),
-                stan_fit = SAB_template,
-                y = y, 
+  foo = glm_sab(y = y, 
                 x_standardized = x_standardized, 
                 alpha_prior_mean = alpha_prior_mean,
                 alpha_prior_cov = alpha_prior_cov,

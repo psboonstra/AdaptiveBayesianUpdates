@@ -1,20 +1,12 @@
-#DESCRIPTION: run this script after completing both stages of simulations in 'runABUSims.R'. This will create
-#the figures reported in the simulation study. Note that I don't know where you've saved your simulation results, 
-#i.e. the 1920 .RData files that were created, so you will need to provide that path if different from your current
-#working directory. 
+# DESCRIPTION: run this script after completing both stages of simulations in 
+# 'run_abu_sims.R'. This will create the figures reported in the simulation 
+# study. Note that I don't know where you've saved your simulation results, 
+# i.e. the 1920 .RData files that were created, so you will need to provide 
+# that path if different from your current working directory
 
-rm(list=ls(all=TRUE));
-require(rstan);
-require(lattice);require(RColorBrewer);require(data.table);
-require(plyr);require(dplyr);require(tidyr);
-phils_computer = T;
-if(phils_computer) {
-  read_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/revisionSims/";
-  write_path = "/Users/philb/Desktop/Work/Barbaro/PedRescuersV2/MethodsPaper/Biostatistics/";
-} else {
-  read_path = 
-    write_path = "";
-}
+library(mice);library(Hmisc);library(MASS);
+library(rstan);library(Matrix);library(mnormt);
+library(tidyverse);
 
 sim_set = 1:1920;
 file_name = "Sim";
@@ -23,7 +15,7 @@ max_run_time = -Inf;
 #NOTE: It will appear that R is nonresponsive upon running this for-loop. It hasn't, but apparently 
 #loadingthis many binary data files is fairly compute-intensive. R just needs a minute to catch up. 
 for(curr_sim in sim_set) {
-  foo = try(load(file=paste(read_path,file_name,curr_sim,".RData",sep="")),silent=T);
+  foo = try(load(file=paste(file_name,curr_sim,".RData",sep="")),silent=T);
   if(class(foo)=="try-error") {
     sim_set = setdiff(sim_set,curr_sim);
   } else if ((get(foo)$sim_params$mins_total_runtime) > max_run_time) {
@@ -39,7 +31,6 @@ generating_params_names = c("n_hist","n_curr","beta_label");
 covariate_args_names = c("x_correlation","x_orig_binom","x_aug_binom");
 population_params_names = c("signal_comp","signal_miss","historical_signal_obs","current_signal_obs","mean_pop_risk");
 meth_names = colnames(get(paste0("sim",sim_set[1]))$mse_beta);
-meth_names = setdiff(meth_names,"Benchmark");
 
 meth_names_toprint =  c(
   "Historical" = "Historical", 
@@ -60,9 +51,9 @@ meth_names_toprint =  c(
 
 #I had to hard code the pretty names; this is a check to make sure that 
 #I didn't change the method names and forget to change the corresponding pretty names
-stopifnot(all(names(meth_names_toprint)==meth_names));
+stopifnot(all(names(meth_names_toprint) == meth_names));
 #Check to make sure that I've ordered the method names in accrodance with the way they appear in a result
-stopifnot(all(names(meth_names_toprint)==setdiff(colnames(get(paste0("sim",sim_set[1]))$mse_beta),"Benchmark")));
+stopifnot(all(names(meth_names_toprint) == colnames(get(paste0("sim",sim_set[1]))$mse_beta)));
 
 individual_results = NULL;
 
@@ -230,8 +221,8 @@ ggplot(filter(figure1_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-#ggsave(paste0(write_path,"/fig1a.eps"),height = 5., width = 9);
-ggsave(paste0(write_path,"/fig1aCOLOR.eps"),height = 5., width = 9);
+#ggsave(paste0("fig1a.eps"),height = 5., width = 9);
+ggsave(paste0("fig1aCOLOR.eps"),height = 5., width = 9);
 #
 ggplot(filter(figure1_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
@@ -263,8 +254,8 @@ ggplot(filter(figure1_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-#ggsave(paste0(write_path,"/fig1b.eps"),height = 4.75, width = 9);
-ggsave(paste0(write_path,"/fig1bCOLOR.eps"),height = 4.75, width = 9);
+#ggsave(paste0("fig1b.eps"),height = 4.75, width = 9);
+ggsave(paste0("fig1bCOLOR.eps"),height = 4.75, width = 9);
 
 
 summary(filter(figure1_results,beta_label <= 5, n_hist == 100, n_curr == 100, x_orig_binom == T, variable %in% c("SAB(agnostic)/Standard"))[,"value"]);
@@ -327,7 +318,7 @@ ggplot(filter(figureS1_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS1a.eps"),height = 5., width = 9);
+ggsave(paste0("figS1a.eps"),height = 5., width = 9);
 #
 ggplot(filter(figureS1_results,beta_label %in% c(6:10), x_orig_binom == T),
        aes(x = factor(n_hist), 
@@ -359,7 +350,7 @@ ggplot(filter(figureS1_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS1b.eps"),height = 4.75, width = 9);
+ggsave(paste0("figS1b.eps"),height = 4.75, width = 9);
 ######################################################
 
 ######################################################
@@ -409,7 +400,7 @@ ggplot(filter(figureS2_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS2a.eps"),height = 5., width = 9);
+ggsave(paste0("figS2a.eps"),height = 5., width = 9);
 #
 ggplot(filter(figureS2_results,beta_label %in% c(6:10), x_orig_binom == T),
        aes(x = factor(n_hist), 
@@ -441,7 +432,7 @@ ggplot(filter(figureS2_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS2b.eps"),height = 4.75, width = 9);
+ggsave(paste0("figS2b.eps"),height = 4.75, width = 9);
 ######################################################
 
 ######################################################
@@ -491,7 +482,7 @@ ggplot(filter(figureS3_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS3a.eps"),height = 5., width = 9);
+ggsave(paste0("figS3a.eps"),height = 5., width = 9);
 #
 ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
@@ -523,7 +514,7 @@ ggplot(filter(figureS3_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figS3b.eps"),height = 4.75, width = 9);
+ggsave(paste0("figS3b.eps"),height = 4.75, width = 9);
 
 
 summary(filter(figureS3_results,beta_label < 6, x_orig_binom == T, variable %in% c("NAB(agnostic)"))[,"value"])
@@ -582,7 +573,7 @@ filter(runtime_summaries, variable == "SAB(agn)") %>%
   arrange(desc(median_runtime))
 
 
-file_name = paste0(write_path,"median_runtimes.txt");
+file_name = paste0("median_runtimes.txt");
 methods_to_show = c("Standard",
                     "NAB(agn)",
                     "NAB(opt)",
@@ -654,7 +645,7 @@ ggplot(filter(figureA1_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figA1a.eps"),height = 5., width = 9);
+ggsave(paste0("figA1a.eps"),height = 5., width = 9);
 #
 ggplot(filter(figureA1_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
@@ -686,7 +677,7 @@ ggplot(filter(figureA1_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figA1b.eps"),height = 4.75, width = 9);
+ggsave(paste0("figA1b.eps"),height = 4.75, width = 9);
 
 ######################################################
 figureA2_results = 
@@ -730,7 +721,7 @@ ggplot(filter(figureA2_results,beta_label < 6, x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figA2a.eps"),height = 5., width = 9);
+ggsave(paste0("figA2a.eps"),height = 5., width = 9);
 #
 ggplot(filter(figureA2_results,beta_label %in% c(6:10), x_orig_binom == T), 
        aes(x = factor(n_hist), 
@@ -762,82 +753,5 @@ ggplot(filter(figureA2_results,beta_label %in% c(6:10), x_orig_binom == T),
         legend.text = element_text(size=12),
         legend.position = "top",
         legend.text.align = 0);
-ggsave(paste0(write_path,"/figA2b.eps"),height = 4.75, width = 9);
+ggsave(paste0("figA2b.eps"),height = 4.75, width = 9);
 
-
-######################################################
-#WNAR plots
-wnar_results = filter(figure1_results,
-                      beta_label %in% c(1,5,6,7,8,10), 
-                      x_orig_binom == T,
-                      n_curr == 200, 
-                      variable %in% c("SAB(agnostic)/Standard", "NAB(agnostic)/Standard"));
-wnar_results$wnar_variable = factor(as.character(wnar_results$variable),labels = c("Naive/Standard","Sensible/Standard"));
-wnar_results$wnar_pretty_beta_label = factor(as.character(wnar_results$pretty_beta_label),
-                                             levels = intersect(as.character(wnar_results$pretty_beta_label),levels(wnar_results$pretty_beta_label)),
-                                             labels = c("b[1]","b[2]","b[3]","b[4]","b[5]","b[6]"));
-
-ggplot(filter(wnar_results, beta_label %in% c(1,5,6)),
-       aes(x = factor(n_hist), 
-           y = sqrt(value))) + 
-  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
-  geom_boxplot(aes(group = interaction(n_hist,wnar_variable),
-                   color = factor(wnar_variable),
-                   fill = factor(wnar_variable)),
-               position = position_dodge(width =  0.85), 
-               alpha = 1,
-               outlier.size = 0.5,
-               size = 0.2) + 
-  facet_grid(~wnar_pretty_beta_label, labeller = label_parsed) +
-  scale_color_grey(start = 0, end = 0) +  
-  scale_y_continuous(trans = "log2",
-                     breaks = 2^seq(-3, 1, by = 0.5),
-                     minor_breaks = 2^seq(-3, 1, by = 0.25),
-                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
-  labs(x = expression(n[hist]), 
-       y = "",
-       fill = "",
-       color = "") + 
-  theme(text = element_text(size = 20),
-        axis.text = element_text(colour = 'black', angle = 0, size = 20, hjust = 0.5, vjust = 0.5),
-        axis.title= element_text(size=20),
-        strip.text = element_text(size = 20),
-        legend.title = element_text(size=20),
-        legend.text = element_text(size=20),
-        legend.position = "bottom",
-        legend.text.align = 0);
-ggsave(paste0(write_path,"/fig1a_WNAR.eps"),height = 5., width = 9);
-#
-ggplot(filter(wnar_results, beta_label %in% c(7,8,10)),
-       aes(x = factor(n_hist), 
-           y = sqrt(value))) + 
-  geom_hline(yintercept = 1, linetype = 2, color = "#303030") + 
-  geom_boxplot(aes(group = interaction(n_hist,wnar_variable),
-                   color = factor(wnar_variable),
-                   fill = factor(wnar_variable)),
-               position = position_dodge(width =  0.85), 
-               alpha = 1,
-               outlier.size = 0.5,
-               size = 0.2) + 
-  facet_grid(~wnar_pretty_beta_label, labeller = label_parsed) +
-  #scale_fill_grey() + 
-  scale_color_grey(start = 0, end = 0) +  
-  scale_y_continuous(trans = "log2",
-                     breaks = 2^seq(-3, 1, by = 0.5),
-                     minor_breaks = 2^seq(-3, 1, by = 0.25),
-                     #labels = c(expression(2^-1.5),expression(2^-1),expression(2^-0.5),expression(2^0),expression(2^0.5),expression(2^1)))+
-                     labels = function(x) {formatC(x,digits=2,format="f");}) + 
-  labs(x = expression(n[hist]), 
-       y = "",
-       fill = "",
-       color = "") + 
-  theme(text = element_text(size = 20),
-        axis.text = element_text(colour = 'black', angle = 0, size = 20, hjust = 0.5, vjust = 0.5),
-        axis.title= element_text(size=20),
-        strip.text = element_text(size = 20),
-        legend.title = element_text(size=20),
-        legend.text = element_text(size=20),
-        legend.position = "bottom",
-        legend.text.align = 0);
-ggsave(paste0(write_path,"/fig1b_WNAR.eps"),height = 5., width = 9);
-#
