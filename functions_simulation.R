@@ -465,7 +465,6 @@ simulator <- function(sim_number,
     true_alphas_orig = rep(NA,num_orig);
   }
   
-  stan_compiled = F;
   begin_sim = Sys.time();
   i=1;
   
@@ -1072,7 +1071,7 @@ simulator <- function(sim_number,
       } 
       #
       rm(matrix_risk_new);     
-      cat(array_id,"-",i," proj. run time:",round(proj_run_time <- difftime(end_compile,begin_compile,units="hours") + (n_sim * (difftime(Sys.time(),begin_sim,units="hours") - difftime(end_compile,begin_compile,units="hours"))/i),2),"hours. proj. end time: ",format.Date(begin_sim  + proj_run_time),"\n\n",file="tracktime.txt",append=T);
+      cat(array_id,"-",i," proj. run time:",round(proj_run_time <- (n_sim * (difftime(Sys.time(),begin_sim,units="hours")) / i), 2),"hours. proj. end time: ",format.Date(begin_sim  + proj_run_time),"\n\n",file="tracktime.txt",append=T);
     }
   }
   ## Summarize results ====##########################################################################
@@ -1092,12 +1091,7 @@ simulator <- function(sim_number,
                    mc_max_treedepth = mc_max_treedepth,
                    ntries_per_iter = ntries_per_iter);
   
-  model_params = list(standard_stan_filename = standard_stan_filename,
-                      sab_stan_filename = sab_stan_filename,
-                      sab_dev_stan_filename = sab_dev_stan_filename,
-                      nab_stan_filename = nab_stan_filename,
-                      nab_dev_stan_filename = nab_dev_stan_filename,
-                      hierarchical_scale = store_hierarchical_scales,
+  model_params = list(hierarchical_scale = store_hierarchical_scales,
                       local_dof = local_dof,
                       global_dof = global_dof,
                       slab_precision = slab_precision,

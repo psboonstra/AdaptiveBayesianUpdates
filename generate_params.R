@@ -1,6 +1,8 @@
-#DESCRIPTION: creates a list of lists called 'arglist'. The user should not generally change anything in this script. If it is desired to overwrite
-#any of the default values, create that variable in 'runMe.R' (before sourcing GenParams.R on line 65 of that script). The default value below will 
-#then be ignored. 
+#DESCRIPTION: creates a list of lists called 'arglist'. The user should not 
+# generally change anything in this script. If it is desired to overwrite
+# any of the default values, create that variable in 'run_abu_sims.R' 
+# (before sourcing this script on line 74 of that script). The default value 
+# below will then be ignored. 
 
 if(!"array_id_offset"%in%ls()){array_id_offset = 0;}
 if(!"mc_iter_after_warmup"%in%ls()){mc_iter_after_warmup = 1.5e3;}
@@ -24,11 +26,21 @@ if(!"sab_imputes_list"%in%ls()){
                           c(1,1));
 }
 
-if(!"standard_stan_template"%in%ls()){standard_stan_template = stanmodels$RegHS_Stable;}
-if(!"sab_stan_template"%in%ls()){sab_stan_template = stanmodels$SAB_Stable;}
-if(!"sab_dev_stan_template"%in%ls()){sab_dev_stan_template = stanmodels$SAB_Dev;}
-if(!"nab_stan_template"%in%ls()){nab_stan_template = stanmodels$NAB_Stable;}
-if(!"nab_dev_stan_template"%in%ls()){nab_dev_stan_template = stanmodels$NAB_Dev;}
+if(!"standard_stan_template"%in%ls()){
+  standard_stan_template = adaptBayes:::stanmodels$RegHS_Stable;
+}
+if(!"sab_stan_template"%in%ls()){
+  sab_stan_template = adaptBayes:::stanmodels$SAB_Stable;
+}
+if(!"sab_dev_stan_template"%in%ls()){
+  sab_dev_stan_template = adaptBayes:::stanmodels$SAB_Dev;
+}
+if(!"nab_stan_template"%in%ls()){
+  nab_stan_template = adaptBayes:::stanmodels$NAB_Stable;
+}
+if(!"nab_dev_stan_template"%in%ls()){
+  nab_dev_stan_template = adaptBayes:::stanmodels$NAB_Dev;
+}
 
 if(!"n_list"%in%ls()){
   n_list = list(n_hist = c(100,100,400,400,1600,1600),#n_hist
@@ -175,7 +187,6 @@ for(i in 1:nrow(all_varying)) {
               random_seed = random_seeds[i],
               fit_marginal = F,
               fit_methods = fit_methods, 
-              skip_methods = skip_methods,
               dynamic_run = dynamic_run))
   arglist = c(arglist,list(get(paste("sim",array_id + array_id_offset,"_params",sep=""))))
 }

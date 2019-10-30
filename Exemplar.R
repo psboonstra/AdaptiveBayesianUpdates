@@ -13,7 +13,7 @@ library(tidyverse);
 options(mc.cores = parallel::detectCores());
 rstan_options(auto_write = TRUE);
 
-source("functions_simulation.R");
+source("functions_simulation.R"); # For draw_data() function
 
 ## Draw Data ====##########################################################################
 #Choose your own values
@@ -335,6 +335,7 @@ round(colMeans(beta_NABAgnostic),3);
 round(colMeans(beta_NABOptimist),3);
 round(colMeans(beta_SABAgnostic),3);
 round(colMeans(beta_SABOptimist),3);
+#true values
 c(true_betas_orig,true_betas_aug);
 #Standard deviation
 round(apply(beta_Standard,2,sd),3);
