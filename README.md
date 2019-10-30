@@ -2,7 +2,7 @@
 
 This is a companion repository for the `R` package `adaptBayes` available here: https://github.com/umich-biostatistics/adaptBayes
 
-After installing and loading that package using the following commands,
+First, install and load that package using the following commands:
 
 ```r
 library(devtools)
@@ -12,7 +12,7 @@ install_github('umich-biostatistics/adaptBayes')
 library(adaptBayes)
 ```
 
-then use the scripts in this repository to reproduce 
+Then, use the scripts in this repository to reproduce 
 the simulations studies in Boonstra and Barbaro
 
 ## Further details
