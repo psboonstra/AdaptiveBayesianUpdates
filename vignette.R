@@ -1,7 +1,7 @@
 #' ---
 #' title: "*Vignette* for `adaptBayes`"
 #' author: "Philip S. Boonstra"
-#' date: "October 31, 2019"
+#' date: "July 23, 2021"
 #' geometry: margin=2cm
 #' output: 
 #'  pdf_document: 
