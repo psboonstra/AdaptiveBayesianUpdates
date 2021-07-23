@@ -357,12 +357,16 @@ ggsave(paste0("figS1b.eps"),height = 4.75, width = 9);
 figureS2_results = 
   individual_results %>%
   filter(Metric == "mse_beta_aug") %>%
-  dplyr::select("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing",
+  dplyr::select("Metric","scenario","n_hist","n_curr","beta_label","beta_group",
+                "x_correlation","x_orig_binom","label_orig","label_aug",
+                "pretty_beta_label","pretty_n_curr_label","percent_signal_missing",
                 "SAB_agn_over_Standard",
                 "SAB_opt_over_Standard",
                 "NAB_agn_over_Standard",
                 "NAB_opt_over_Standard") %>% 
-  reshape2::melt(id.vars=c("Metric","scenario","n_hist","n_curr","beta_label","beta_group","x_correlation","x_orig_binom","label_orig","label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing"))
+  reshape2::melt(id.vars=c("Metric","scenario","n_hist","n_curr","beta_label",
+                           "beta_group","x_correlation","x_orig_binom","label_orig",
+                           "label_aug","pretty_beta_label","pretty_n_curr_label","percent_signal_missing"))
 figureS2_results$variable = factor(figureS2_results$variable,
                                    labels = c(
                                      "SAB(agnostic)/Standard",
